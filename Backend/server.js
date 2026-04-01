@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import quizRoutes from "./routes/quizRoutes.js";
+import attemptRoutes from "./routes/attemptRoutes.js"; // ✅ NEW
+
 import { PORT } from "./config/env.js";
 
 const app = express();
@@ -12,6 +15,9 @@ app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/quiz", quizRoutes);
+app.use("/api/attempt", attemptRoutes); // ✅ NEW
+
 
 // Test route
 app.get("/", (req, res) => {
