@@ -1,4 +1,4 @@
-import express from "express";
+/*import express from "express";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
@@ -45,4 +45,41 @@ const startServer = async () => {
   }
 };
 
-startServer();
+startServer();*/
+
+// 🔄 UPDATED
+
+import express from "express";
+import cors from "cors";
+import rateLimit from "express-rate-limit"; // 🆕
+import connectDB from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
+import quizRoutes from "./routes/quizRoutes.js";
+import attemptRoutes from "./routes/attemptRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
+import { PORT } from "./config/env.js";
+
+const app = express();
+
+connectDB();
+
+app.use(cors());
+app.use(express.json());
+
+// 🆕 RATE LIMIT
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+  })
+);
+
+// ROUTES
+app.use("/api/auth", authRoutes);
+app.use("/api/quiz", quizRoutes);
+app.use("/api/attempt", attemptRoutes);
+app.use("/api/ai", aiRoutes);
+
+app.listen(PORT, () => {
+  console.log(`Server running on ${PORT}`);
+});

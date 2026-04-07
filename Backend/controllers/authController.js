@@ -2,7 +2,9 @@ import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import TryCatch from "../utils/TryCatch.js";
-import { verifyToken } from "../utils/verifyToken.js";
+//import { verifyToken } from "../utils/verifyToken.js";
+import { protect } from "../middleware/authMiddleware.js"; // ✅ ADD THIS
+
 import { JWT_SECRET } from "../config/env.js";
 
 
@@ -77,7 +79,8 @@ export const loginUser = TryCatch(async (req, res) => {
 
 // ADMIN ROUTE
 export const getAdminData = TryCatch(async (req, res) => {
-  const user = verifyToken(req);
+  //const user = verifyToken(req);
+  const user = req.user;
 
   if (user.role !== "admin") {
     return res.status(403).json({ message: "Access denied" });

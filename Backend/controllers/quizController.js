@@ -2,12 +2,15 @@ import mongoose from "mongoose";
 import Quiz from "../models/Quiz.js";
 import Attempt from "../models/Attempt.js"; // ✅ FIX
 import TryCatch from "../utils/TryCatch.js";
-import { verifyToken } from "../utils/verifyToken.js";
+//import { verifyToken } from "../utils/verifyToken.js";
+import { protect } from "../middleware/authMiddleware.js"; // ✅ ADD THIS
+
 
 
 // 🧑‍🏫 CREATE QUIZ
 export const createQuiz = TryCatch(async (req, res) => {
-  const user = verifyToken(req);
+  //const user = verifyToken(req);
+  const user = req.user;
 
   if (user.role !== "teacher") {
     return res.status(403).json({ message: "Only teachers allowed" });
@@ -38,7 +41,8 @@ export const createQuiz = TryCatch(async (req, res) => {
 
 // 🤖 GENERATE QUIZ
 export const generateQuizFromText = TryCatch(async (req, res) => {
-  const user = verifyToken(req);
+ // const user = verifyToken(req);
+ const user = req.user;
 
   const { text } = req.body;
   if (!text) throw new Error("Text required");
@@ -68,7 +72,8 @@ export const generateQuizFromText = TryCatch(async (req, res) => {
 
 // 🎯 ATTEMPT QUIZ + SAVE HISTORY
 export const attemptQuiz = TryCatch(async (req, res) => {
-  const user = verifyToken(req); // ✅ FIX
+  //const user = verifyToken(req); // ✅ FIX
+  const user = req.user;
 
   const { quizId } = req.params;
   const { answers } = req.body;
@@ -110,4 +115,22 @@ export const attemptQuiz = TryCatch(async (req, res) => {
     percentage,
     attemptId: attempt._id,
   });
+});
+
+// 🆕 DELETE QUIZ
+export const deleteQuiz = TryCatch(async (req, res) => {
+  await Quiz.findByIdAndDelete(req.params.id);
+
+  res.json({ message: "Quiz deleted" });
+});
+
+// 🆕 UPDATE QUIZ
+export const updateQuiz = TryCatch(async (req, res) => {
+  const quiz = await Quiz.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true }
+  );
+
+  res.json({ message: "Quiz updated", quiz });
 });
