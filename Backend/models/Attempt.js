@@ -26,6 +26,11 @@ const attemptSchema = new mongoose.Schema({
   percentage: {
     type: Number,
     required: true
+  },
+
+  feedback: {
+    type: String,
+    default: ""
   }
 
 }, { timestamps: true });

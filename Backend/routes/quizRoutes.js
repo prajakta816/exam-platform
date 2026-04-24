@@ -21,15 +21,22 @@ export default router;*/
 // 🔄 UPDATED
 
 import express from "express";
-import { protect } from "../middleware/authMiddleware.js"; // 🆕
+import { protect } from "../middleware/authMiddleware.js";
+import { checkFollowPermission } from "../middleware/followMiddleware.js";
 import {
   createQuiz,
   updateQuiz,
   deleteQuiz,
-  attemptQuiz
+  attemptQuiz,
+  getAllQuizzes,
+  getQuizById
 } from "../controllers/quizController.js";
 
 const router = express.Router();
+
+router.get("/", protect, getAllQuizzes);
+router.get("/:id", protect, getQuizById);
+
 
 router.post("/create", protect, createQuiz);
 router.put("/:id", protect, updateQuiz);     // 🆕

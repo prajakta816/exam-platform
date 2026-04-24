@@ -10,10 +10,20 @@ import { JWT_SECRET } from "../config/env.js";
 
 // REGISTER
 export const registerUser = TryCatch(async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, email, password, role } = req.body;
 
+  // 🛡️ BASIC VALIDATION
   if (!name || !email || !password) {
-    throw new Error("All fields are required");
+    throw new Error("Name, email and password are required");
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error("Please provide a valid email address");
+  }
+
+  if (password.length < 6) {
+    throw new Error("Password must be at least 6 characters long");
   }
 
   const userExists = await User.findOne({ email });
@@ -28,7 +38,7 @@ export const registerUser = TryCatch(async (req, res) => {
     name,
     email,
     password: hashedPassword,
-    role: "student",
+    role: role === "teacher" ? "teacher" : "student",
   });
 
   res.status(201).json({
@@ -46,6 +56,15 @@ export const registerUser = TryCatch(async (req, res) => {
 // LOGIN
 export const loginUser = TryCatch(async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new Error("Email and password are required");
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new Error("Please provide a valid email address");
+  }
 
   const user = await User.findOne({ email }).select("+password");
 
@@ -72,6 +91,7 @@ export const loginUser = TryCatch(async (req, res) => {
       id: user._id,
       name: user.name,
       role: user.role,
+      profilePic: user.profilePic,
     },
   });
 });

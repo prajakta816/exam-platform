@@ -1,76 +1,38 @@
-/*import express from "express";
-import cors from "cors";
-import connectDB from "./config/db.js";
-import authRoutes from "./routes/authRoutes.js";
-import quizRoutes from "./routes/quizRoutes.js";
-import attemptRoutes from "./routes/attemptRoutes.js"; // ✅ NEW
-
-import { PORT } from "./config/env.js";
-
-const app = express();
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Routes
-app.use("/api/auth", authRoutes);
-app.use("/api/quiz", quizRoutes);
-app.use("/api/attempt", attemptRoutes); // ✅ NEW
-
-
-// Test route
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-  res.status(500).json({
-    message: err.message || "Server Error",
-  });
-});
-
-// Start server
-const startServer = async () => {
-  try {
-    await connectDB();
-
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
-
-  } catch (error) {
-    console.error("Server failed to start:", error.message);
-  }
-};
-
-startServer();*/
-
 // 🔄 UPDATED
 
 import express from "express";
 import cors from "cors";
-import rateLimit from "express-rate-limit"; // 🆕
+import helmet from "helmet"; // 🆕 added
+import rateLimit from "express-rate-limit";
 import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import quizRoutes from "./routes/quizRoutes.js";
 import attemptRoutes from "./routes/attemptRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
+import noteRoutes from "./routes/noteRoutes.js";
+import contentRoutes from "./routes/contentRoutes.js"; // 🆕 added
+import userRoutes from "./routes/userRoutes.js"; // 🆕 added
+import notificationRoutes from "./routes/notificationRoutes.js"; // 🆕 added
+import commentRoutes from "./routes/commentRoutes.js"; // 🆕 added
+import ratingRoutes from "./routes/ratingRoutes.js"; // 🆕 added
 import { PORT } from "./config/env.js";
 
 const app = express();
 
 connectDB();
 
+app.use(helmet()); // ✅ Security headers
 app.use(cors());
 app.use(express.json());
 
-// 🆕 RATE LIMIT
+// 🆕 RATE LIMIT (Enhanced)
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
+    message: { message: "Too many requests from this IP, please try again after 15 minutes" },
+    standardHeaders: true,
+    legacyHeaders: false,
   })
 );
 
@@ -79,6 +41,13 @@ app.use("/api/auth", authRoutes);
 app.use("/api/quiz", quizRoutes);
 app.use("/api/attempt", attemptRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/notes", noteRoutes);
+app.use("/api/content", contentRoutes);
+app.use("/api/user", userRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/rating", ratingRoutes);
+app.use("/uploads", express.static("uploads"));
 
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);

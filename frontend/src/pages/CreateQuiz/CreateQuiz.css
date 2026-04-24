@@ -1,0 +1,245 @@
+/* ===== GLOBAL ===== */
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: linear-gradient(135deg, #eef2ff, #f8fafc);
+}
+
+/* ===== CONTAINER ===== */
+.container {
+  max-width: 950px;
+  margin: auto;
+  padding: 30px 20px;
+  animation: fadeIn 0.6s ease;
+}
+
+/* ===== HEADER ===== */
+h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 20px;
+}
+
+/* ===== BACK BUTTON ===== */
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.back-btn:hover {
+  color: #4f46e5;
+  transform: translateX(-3px);
+}
+
+/* ===== FORM ===== */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ===== INPUTS ===== */
+input, textarea, select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  outline: none;
+  font-size: 14px;
+  transition: all 0.25s ease;
+  background: #fff;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* ===== META ROW ===== */
+.meta {
+  display: flex;
+  gap: 15px;
+}
+
+.meta input {
+  flex: 1;
+}
+
+.meta select {
+  flex: 1;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  animation: slideUp 0.4s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.06);
+  border-color: #c7d2fe;
+}
+
+/* ===== CARD HEADER ===== */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.card-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+/* ===== OPTION ===== */
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  animation: fadeIn 0.3s ease;
+}
+
+.option input[type="text"] {
+  flex: 1;
+}
+
+.option input[type="radio"] {
+  accent-color: #6366f1;
+  cursor: pointer;
+}
+
+/* Highlight selected correct answer */
+.option input[type="radio"]:checked + input {
+  background: #eef2ff;
+  border-color: #6366f1;
+}
+
+/* ===== IMAGE UPLOAD ===== */
+.image-upload {
+  margin-top: 10px;
+}
+
+.image-upload input {
+  border: none;
+}
+
+.image-upload img {
+  margin-top: 10px;
+  width: 180px;
+  border-radius: 10px;
+  box-shadow: 0 5px 12px rgba(0,0,0,0.1);
+  animation: fadeIn 0.4s ease;
+}
+
+/* ===== BUTTONS ===== */
+button {
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* Add option button */
+button svg {
+  vertical-align: middle;
+}
+
+/* Add question */
+.add-btn {
+  background: transparent;
+  border: 2px dashed #cbd5f5;
+  color: #4f46e5;
+  padding: 14px;
+  font-weight: 600;
+}
+
+.add-btn:hover {
+  background: #eef2ff;
+  border-color: #6366f1;
+  transform: scale(1.02);
+}
+
+/* Submit */
+.submit-btn {
+  background: linear-gradient(135deg, #6366f1, #3b82f6);
+  color: white;
+  font-weight: 600;
+}
+
+.submit-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99,102,241,0.3);
+}
+
+.submit-btn:disabled {
+  background: #a5b4fc;
+  cursor: not-allowed;
+}
+
+/* Delete / small buttons */
+.card-header button,
+.option button {
+  background: transparent;
+  color: #94a3b8;
+}
+
+.card-header button:hover,
+.option button:hover {
+  color: #ef4444;
+  transform: scale(1.2);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(15px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .meta {
+    flex-direction: column;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 1.6rem;
+  }
+}
