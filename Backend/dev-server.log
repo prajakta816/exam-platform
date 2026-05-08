@@ -1,0 +1,113 @@
+
+> backend@1.0.0 dev
+> nodemon server.js
+
+[33m[nodemon] 3.1.14[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+Server running on 5000
+Server running on 50001
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Server running on 5000
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Server running on 5000
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Server running on 5000
+Server running on 50001
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Server running on 5000
+Server running on 50001
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+Server running on 5000
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+Server running on 5000
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+🤖 Generating with Google Gemini AI...
+User connected: ahlqAgiiTEpV1Wp0AAAC
+User Prajakta joined room: V1EWYL
+User connected: D7Mbeb90m9TJ27CKAAAF
+User Prajakta joined room: V1EWYL
+User disconnected: ahlqAgiiTEpV1Wp0AAAC
+User Prajakta left room: V1EWYL
+User disconnected: D7Mbeb90m9TJ27CKAAAF
+User Prajakta left room: V1EWYL
+User connected: myit0DAAxkBrSShlAAAH
+User disconnected: myit0DAAxkBrSShlAAAH
+User connected: FDYZq79LdWUQLHpjAAAK
+User Prajakta joined room: V1EWYL
+User disconnected: FDYZq79LdWUQLHpjAAAK
+User Prajakta left room: V1EWYL
+🤖 Generating with Google Gemini AI...
+🤖 Generating with Google Gemini AI...
+User connected: xw1DOnVNi0s5izl5AAAM
+User disconnected: xw1DOnVNi0s5izl5AAAM
+User connected: dqTnmqujWrHLamgKAAAP
+User Prajakta joined room: V1EWYL
+User disconnected: dqTnmqujWrHLamgKAAAP
+User Prajakta left room: V1EWYL
+🤖 Generating with Google Gemini AI...
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+Server running on 5000
+Server running on 50001
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Server running on 5000
+Server running on 50001
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Server running on 5000
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+Server running on 5000
+Server running on 50001
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚙️  override existing env vars with { override: true }
+Server running on 5000
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node server.js`[39m
+[dotenv@17.3.1] injecting env (6) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Server running on 5000
+MongoDB Connected: ac-q1tjkpw-shard-00-00.7ggwnck.mongodb.net
+🤖 Generating with Google Gemini AI...
+Generating with Gemini model gemini-2.5-flash, attempt 1
+Generating with Gemini model gemini-2.5-flash, attempt 2
+Generating with Gemini model gemini-2.5-flash, attempt 3
+Generating with Gemini model gemini-2.5-flash-lite, attempt 1
+🤖 Generating with Google Gemini AI...
+Generating with Gemini model gemini-2.5-flash, attempt 1
+Generating with Gemini model gemini-2.5-flash, attempt 2
+Generating with Gemini model gemini-2.5-flash, attempt 3
+Generating with Gemini model gemini-2.5-flash-lite, attempt 1
+Generating with Gemini model gemini-2.5-flash-lite, attempt 2

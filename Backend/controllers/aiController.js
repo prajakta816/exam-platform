@@ -11,15 +11,17 @@ export const generateQuizFromPDF = TryCatch(async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No PDF file uploaded" });
   }
+  
+  const numQuestions = parseInt(req.body.numQuestions) || 5;
 
   try {
     const text = await extractTextFromPDF(req.file.path);
     
     // Increased limit to ~10,000 chars (approx 2000 words)
-    const questions = await generateMCQ(text.slice(0, 10000)); 
+    const questions = await generateMCQ(text.slice(0, 10000), numQuestions); 
 
     const quiz = await Quiz.create({
-      title: `AI Quiz: ${req.file.originalname.replace('.pdf', '')}`,
+      title: req.body.title || `AI Quiz: ${req.file.originalname.replace('.pdf', '')}`,
       questions,
       createdBy: req.user.id,
     });
@@ -38,17 +40,19 @@ export const generateQuizFromPDF = TryCatch(async (req, res) => {
 
 // 🆕 Generate from Text
 export const generateQuizFromText = TryCatch(async (req, res) => {
-  const { text, title } = req.body;
+  const { text, topic, title, numQuestions = 5 } = req.body;
 
-  if (!text || text.trim().length < 50) {
+  const inputData = topic || text;
+
+  if (!inputData || inputData.trim().length < 5) {
     return res.status(400).json({ 
-      message: "Please provide at least 50 characters of text for meaningful results." 
+      message: "Please provide a valid topic or text content." 
     });
   }
 
   try {
     // Increased limit to ~10,000 chars
-    const questions = await generateMCQ(text.slice(0, 10000));
+    const questions = await generateMCQ(inputData.slice(0, 10000), numQuestions, !!topic);
 
     const quiz = await Quiz.create({
       title: title || "AI Generated Knowledge Quiz",

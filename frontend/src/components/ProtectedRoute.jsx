@@ -6,8 +6,8 @@ export default function ProtectedRoute({ children }) {
 
   if (!user) {
     // Clear potentially corrupted data
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
     return <Navigate to="/login" replace />;
   }
 

@@ -19,6 +19,10 @@ import Profile from "./pages/Profile/Profile";
 import Search from "./pages/Search/Search";
 import FollowRequests from "./pages/FollowRequests/FollowRequests";
 import EditProfile from "./pages/Profile/EditProfile";
+import LiveDashboard from "./pages/LiveRoom/LiveDashboard";
+import LiveJoin from "./pages/LiveRoom/LiveJoin";
+import LiveRoom from "./pages/LiveRoom/LiveRoom";
+import LiveHistory from "./pages/LiveRoom/LiveHistory";
 
 function App() {
   return (
@@ -43,6 +47,10 @@ function App() {
             <Route path="/rank/:id" element={<ProtectedRoute><Rank /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
             <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+            <Route path="/live-dashboard" element={<ProtectedRoute><LiveDashboard /></ProtectedRoute>} />
+            <Route path="/live-join" element={<ProtectedRoute><LiveJoin /></ProtectedRoute>} />
+            <Route path="/live-room/:roomCode" element={<ProtectedRoute><LiveRoom /></ProtectedRoute>} />
+            <Route path="/live-history" element={<ProtectedRoute><LiveHistory /></ProtectedRoute>} />
           </Routes>
         </div>
       </BrowserRouter>

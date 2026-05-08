@@ -65,6 +65,10 @@ const quizSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  roomCode: {
+    type: String,
+    default: null,
+  },
 
   questions: {
     type: [questionSchema],

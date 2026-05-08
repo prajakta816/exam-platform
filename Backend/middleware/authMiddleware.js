@@ -1,8 +1,7 @@
-// 🆕 NEW FILE
-
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-export const protect = (req, res, next) => {
+export const protect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   // ✅ Check token exists
@@ -16,7 +15,14 @@ export const protect = (req, res, next) => {
     // ✅ Decode token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded; // 🆕 attach user to request
+    // ✅ Fetch full user from DB (excluding password)
+    const user = await User.findById(decoded.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    req.user = user; // 🆕 attach full user to request
 
     next();
   } catch (error) {

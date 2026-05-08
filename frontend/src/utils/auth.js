@@ -16,7 +16,7 @@ export const decodeToken = (token) => {
 };
 
 export const getLocalUser = () => {
-  const token = localStorage.getItem("token");
+  const token = sessionStorage.getItem("token");
   if (!token) return null;
   
   const decoded = decodeToken(token);
@@ -25,14 +25,17 @@ export const getLocalUser = () => {
   // Check if token is expired
   const currentTime = Date.now() / 1000;
   if (decoded.exp < currentTime) {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
     return null;
   }
+
+  const userJson = sessionStorage.getItem("user");
+  const parsedUser = userJson ? JSON.parse(userJson) : null;
 
   return {
     id: decoded.id,
     role: decoded.role,
-    name: decoded.name || localStorage.getItem("user") ? JSON.parse(localStorage.getItem("user")).name : "User"
+    name: parsedUser ? parsedUser.name : (decoded.name || "User")
   };
 };

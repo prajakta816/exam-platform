@@ -73,10 +73,10 @@ const EditProfile = () => {
       });
 
       // Update local storage user name and pic if changed
-      const localUser = JSON.parse(localStorage.getItem("user"));
+      const localUser = JSON.parse(sessionStorage.getItem("user"));
       localUser.name = res.data.user.name;
       localUser.profilePic = res.data.user.profilePic;
-      localStorage.setItem("user", JSON.stringify(localUser));
+      sessionStorage.setItem("user", JSON.stringify(localUser));
 
       setMessage({ type: "success", text: "Profile updated successfully!" });
       setTimeout(() => navigate(`/profile/${currentUser.id}`), 1500);

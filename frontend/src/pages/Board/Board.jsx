@@ -14,7 +14,8 @@ import {
   Trophy,
   ArrowUpRight,
   FileText,
-  UserPlus
+  UserPlus,
+  Zap
 } from "lucide-react";
 import { QuizCardSkeleton, ListRowSkeleton, StatCardSkeleton } from "../../components/Skeleton";
 
@@ -41,17 +42,32 @@ const Board = () => {
         API.get("/user/requests")
       ]);
 
-      const allQuizzes = quizRes.status === 'fulfilled' ? (quizRes.value.data.quizzes ?? quizRes.value.data) : [];
+      const rawQuizzes = quizRes.status === 'fulfilled' ? (quizRes.value.data.quizzes ?? quizRes.value.data) : [];
       const allNotes = noteRes.status === 'fulfilled' ? (noteRes.value.data.notes ?? noteRes.value.data) : [];
       const pendingRequests = reqRes.status === 'fulfilled' ? reqRes.value.data : [];
+
+      // Filter duplicates and prioritize live versions
+      const filteredQuizzes = rawQuizzes.reduce((acc, current) => {
+        const isLive = current.roomCode || current.description?.includes("Live Session");
+        const existing = acc.find(q => q.title === current.title && String(q.createdBy?._id || q.createdBy) === String(current.createdBy?._id || current.createdBy));
+        
+        if (!existing) {
+          acc.push(current);
+        } else if (isLive && !(existing.roomCode || existing.description?.includes("Live Session"))) {
+          // Replace regular quiz with live version if titles match
+          const index = acc.indexOf(existing);
+          acc[index] = current;
+        }
+        return acc;
+      }, []);
 
       // Robust ID helper to handle populated/unpopulated fields and type mismatches
       const getID = (obj) => String(obj?._id || obj || "");
       const currentUserId = String(user?.id || "");
 
-      setMyQuizzes(allQuizzes.filter(q => getID(q.createdBy) === currentUserId));
+      setMyQuizzes(filteredQuizzes.filter(q => getID(q.createdBy) === currentUserId));
       setMyNotes(allNotes.filter(n => getID(n.uploadedBy) === currentUserId));
-      setAvailableQuizzes(allQuizzes.filter(q => getID(q.createdBy) !== currentUserId));
+      setAvailableQuizzes(filteredQuizzes.filter(q => getID(q.createdBy) !== currentUserId));
       setRequests(pendingRequests);
       
     } catch (err) {
@@ -263,11 +279,18 @@ const Board = () => {
                   </div>
                   <span className="text-sm font-bold text-slate-600">{quiz.createdBy?.name}</span>
                 </div>
-                <div onClick={() => navigate(`/quiz/${quiz._id}`)}>
+                <div onClick={() => {
+                  const isLiveQuiz = quiz.roomCode || quiz.description?.includes("Live Session");
+                  if (isLiveQuiz) {
+                    navigate(`/rank/${quiz._id}`);
+                  } else {
+                    navigate(`/quiz/${quiz._id}`);
+                  }
+                }}>
                   <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">{quiz.title}</h3>
                   <p className="text-slate-500 text-sm mb-4 line-clamp-1">{quiz.description}</p>
                   <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
-                    Attempt Quiz <ArrowRight size={14} />
+                    {(quiz.roomCode || quiz.description?.includes("Live Session")) ? "View Results" : "Attempt Quiz"} <ArrowRight size={14} />
                   </div>
                 </div>
               </div>
@@ -324,22 +347,44 @@ const Board = () => {
           </h2>
           <div className="space-y-4">
             {myQuizzes.length > 0 ? (
-              myQuizzes.slice(0, 4).map(quiz => (
+              myQuizzes.map(quiz => (
                 <div key={quiz._id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
                   <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                      <BrainCircuit size={20} />
+                    <div className={`p-3 rounded-xl transition-colors ${quiz.roomCode ? 'bg-red-50 text-red-600 group-hover:bg-red-600 group-hover:text-white' : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'}`}>
+                      {quiz.roomCode ? <Zap size={20} /> : <BrainCircuit size={20} />}
                     </div>
-                    <div>
-                      <h4 className="font-bold text-slate-800">{quiz.title}</h4>
-                      <p className="text-xs text-slate-400 font-medium">{quiz.questions?.length} Qs • {quiz.difficulty}</p>
+                    <div className="flex-grow">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-slate-800 text-lg">{quiz.title}</h4>
+                        {quiz.roomCode && (
+                          <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-black rounded-full uppercase tracking-tighter">Live Dash</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">
+                        <span>Created on {new Date(quiz.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                        <span>{quiz.questions?.length} Questions</span>
+                      </div>
                     </div>
                   </div>
                   <button 
-                    onClick={() => navigate(`/rank/${quiz._id}`)}
-                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                    onClick={() => {
+                      if (user.role === "teacher") {
+                        if (quiz.roomCode) {
+                          // Navigate to live dashboard analytics for this specific test
+                          navigate(`/live-dashboard?roomCode=${quiz.roomCode}`);
+                        } else {
+                          // Navigate to ranking/results for regular quiz
+                          navigate(`/rank/${quiz._id}`);
+                        }
+                      } else {
+                        navigate(`/quiz/${quiz._id}`);
+                      }
+                    }}
+                    title="View Test Details"
+                    className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all shadow-sm border border-transparent hover:border-indigo-100"
                   >
-                    <ArrowUpRight size={20} />
+                    <ArrowUpRight size={22} />
                   </button>
                 </div>
               ))

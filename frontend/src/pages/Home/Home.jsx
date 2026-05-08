@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import API from "../../services/api";
 import { Sparkles, ArrowRight, Newspaper, Cpu, Code, Zap } from "lucide-react";
 
@@ -7,19 +8,40 @@ const Home = () => {
   const [headline, setHeadline] = useState("AI & Engineering News");
   const [loading, setLoading] = useState(true);
 
+  const [dailyQuiz, setDailyQuiz] = useState(null);
+  const [quizLoading, setQuizLoading] = useState(true);
+
   useEffect(() => {
     const fetchNews = async () => {
       try {
+        setLoading(true);
         const res = await API.get("/content/daily");
-        setNews(res.data.news);
-        setHeadline(res.data.headline);
+        setHeadline(res.data.headline || "AI & Engineering News");
+        setNews(Array.isArray(res.data.news) ? res.data.news : []);
       } catch (err) {
-        console.error("Failed to fetch news", err);
+        console.error("Failed to fetch daily news", err);
+        setHeadline("AI & Engineering News");
+        setNews([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchNews();
+  }, []);
+
+  useEffect(() => {
+    const fetchQuiz = async () => {
+      try {
+        const res = await API.get("/daily-quiz");
+        setDailyQuiz(res.data);
+      } catch (err) {
+        console.error("Failed to fetch daily quiz", err);
+      } finally {
+        setQuizLoading(false);
+      }
+    };
+    fetchQuiz();
   }, []);
 
   return (
@@ -67,6 +89,20 @@ const Home = () => {
             <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Auto-updated daily</span>
           </div>
         </div>
+
+        {/* Daily Quiz Section */}
+        {quizLoading ? (
+          <div className="text-center py-8">Loading Daily Quiz...</div>
+        ) : dailyQuiz ? (
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border border-indigo-100 dark:border-indigo-800 mb-12">
+            <h2 className="text-3xl font-black text-indigo-600 mb-4">Today's Daily Quiz</h2>
+            <p className="text-slate-600 mb-6">{dailyQuiz.title || "Test your knowledge with today's quiz!"}</p>
+            <Link to={`/quiz/${dailyQuiz._id}`} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all">
+              Start Quiz
+              <ArrowRight size={16} className="inline ml-2" />
+            </Link>
+          </div>
+        ) : null}
 
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

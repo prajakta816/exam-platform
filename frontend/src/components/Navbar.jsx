@@ -16,7 +16,9 @@ import {
   Bell,
   Check,
   Moon,
-  Sun
+  Sun,
+  Radio,
+  Trophy
 } from "lucide-react";
 import { getLocalUser } from "../utils/auth";
 import API from "../services/api";
@@ -95,8 +97,8 @@ export default function Navbar() {
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
     setUser(null);
     navigate("/login");
   };
@@ -211,12 +213,15 @@ export default function Navbar() {
                   
                   {user.role === "student" ? (
                     <>
+                      <NavLink to="/live-join" icon={Radio}>Join Live</NavLink>
                       <NavLink to="/notes" icon={FileText}>Notes</NavLink>
                       <NavLink to="/history" icon={BarChart3}>History</NavLink>
+                      <NavLink to="/live-history" icon={Trophy}>Live Results</NavLink>
                     </>
                   ) : (
                     <>
                       <NavLink to="/create-quiz" icon={PlusCircle}>Create</NavLink>
+                      <NavLink to="/live-dashboard" icon={Radio}>Live Dash</NavLink>
                       <NavLink to="/notes" icon={FileText}>Notes</NavLink>
                       <NavLink to="/analytics" icon={BarChart3}>Analytics</NavLink>
                     </>

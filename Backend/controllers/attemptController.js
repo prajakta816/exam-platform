@@ -36,6 +36,8 @@ export const getLeaderboard = TryCatch(async (req, res) => {
 
 // 🔄 UPDATED
 
+import mongoose from "mongoose";
+import TestResult from "../models/TestResult.js";
 import Attempt from "../models/Attempt.js";
 import TryCatch from "../utils/TryCatch.js";
 import { protect } from "../middleware/authMiddleware.js"; // ✅ ADD THIS
@@ -67,22 +69,68 @@ export const getLeaderboard = TryCatch(async (req, res) => {
   const { quizId } = req.params;
   const userId = req.user.id;
 
+  if (!mongoose.Types.ObjectId.isValid(quizId)) {
+    return res.status(400).json({ message: "Invalid quiz ID format" });
+  }
+
   const quiz = await Quiz.findById(quizId);
   if (!quiz) return res.status(404).json({ message: "Quiz not found" });
 
-  const hasAttempted = await Attempt.findOne({ quiz: quizId, user: userId });
+  const userObjId = new mongoose.Types.ObjectId(userId);
+  
+  // 🛡️ Robust checking for any kind of attempt
+  const hasStandaloneAttempt = await Attempt.findOne({ quiz: quizId, user: userObjId });
+  const hasLiveAttempt = await TestResult.findOne({ 
+    studentId: userObjId, 
+    $or: [
+      { quizId: new mongoose.Types.ObjectId(quizId) },
+      { testName: { $regex: new RegExp("^" + (quiz.title || "") + "$", "i") } }
+    ]
+  });
+  
   const isCreator = quiz.createdBy.toString() === userId;
 
-  if (!isCreator && !hasAttempted) {
+  if (!isCreator && !hasStandaloneAttempt && !hasLiveAttempt) {
     return res.status(403).json({ 
       message: "You must attempt the quiz to view the leaderboard" 
     });
   }
 
-  const leaderboard = await Attempt.find({ quiz: quizId })
-    .populate("user", "name profilePic")
-    .sort({ score: -1, createdAt: 1 }) // High score first, then earliest attempt
-    .limit(50);
+  // 🔄 Fetch from both sources
+  const [standaloneResults, liveResults] = await Promise.all([
+    Attempt.find({ quiz: quizId }).populate("user", "name profilePic"),
+    TestResult.find({ 
+      $or: [
+        { quizId: new mongoose.Types.ObjectId(quizId) },
+        { testName: { $regex: new RegExp("^" + (quiz.title || "") + "$", "i") } }
+      ]
+    }).populate("studentId", "name profilePic")
+  ]);
 
-  res.json(leaderboard);
+  // 🔀 Merge and Format
+  const unifiedLeaderboard = [
+    ...standaloneResults.map(a => ({
+      _id: a._id,
+      user: a.user,
+      score: a.score,
+      totalQuestions: a.totalQuestions,
+      percentage: a.percentage,
+      createdAt: a.createdAt,
+      type: "standalone"
+    })),
+    ...liveResults.map(r => ({
+      _id: r._id,
+      user: r.studentId, // Map studentId to user for consistency
+      score: r.score,
+      totalQuestions: quiz.questions.length,
+      percentage: (r.score / quiz.questions.length) * 100,
+      createdAt: r.date,
+      type: "live"
+    }))
+  ];
+
+  // 🏆 Sort by score descending
+  unifiedLeaderboard.sort((a, b) => b.score - a.score);
+
+  res.json(unifiedLeaderboard.slice(0, 50));
 });

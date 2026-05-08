@@ -12,6 +12,9 @@ export default function CreateQuiz() {
   
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiQuestionCount, setAiQuestionCount] = useState(5);
+  const [aiLoading, setAiLoading] = useState(false);
   const [questions, setQuestions] = useState([
     { question: "", options: ["", "", "", ""], correctAnswer: 0 }
   ]);
@@ -141,6 +144,31 @@ export default function CreateQuiz() {
     }
   };
 
+  const handleAIGenerate = async () => {
+    setGlobalError("");
+
+    if (!aiPrompt.trim() || aiPrompt.trim().length < 5) {
+      setGlobalError("Please enter a clear topic or prompt for the AI quiz.");
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      await API.post("/ai/generate-text", {
+        topic: aiPrompt,
+        title: title || "AI Generated Quiz",
+        numQuestions: aiQuestionCount
+      });
+      navigate("/board");
+    } catch (err) {
+      console.error(err);
+      setGlobalError(err.response?.data?.message || "Gemini could not generate the quiz. Please try a more specific prompt.");
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <div className="create-quiz-container max-w-4xl mx-auto px-4 py-8">
       <button 
@@ -161,6 +189,51 @@ export default function CreateQuiz() {
             <span className="font-medium">{globalError}</span>
           </div>
         )}
+
+        <div className="mb-8 bg-violet-50 border border-violet-100 rounded-2xl p-6">
+          <div className="flex flex-col md:flex-row md:items-end gap-4">
+            <div className="flex-1">
+              <label className="block text-sm font-bold text-violet-800 mb-1.5">Generate MCQ with Gemini</label>
+              <textarea
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+                placeholder="e.g. Create 10 medium-level MCQs on React hooks with practical code examples"
+                rows="3"
+                className="w-full px-4 py-3 border border-violet-200 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition bg-white resize-none"
+              />
+            </div>
+            <div className="md:w-36">
+              <label className="block text-sm font-bold text-violet-800 mb-1.5">Questions</label>
+              <input
+                type="number"
+                min="1"
+                max="25"
+                value={aiQuestionCount}
+                onChange={(e) => setAiQuestionCount(e.target.value)}
+                className="w-full px-4 py-3 border border-violet-200 rounded-xl focus:ring-4 focus:ring-violet-500/20 focus:border-violet-500 outline-none transition bg-white"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleAIGenerate}
+              disabled={aiLoading}
+              className={`px-6 py-3 rounded-xl font-bold text-white shadow-lg flex justify-center items-center transition-all md:mb-0 ${
+                aiLoading
+                  ? 'bg-violet-400 cursor-not-allowed'
+                  : 'bg-violet-600 hover:bg-violet-700 shadow-violet-200'
+              }`}
+            >
+              {aiLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  Creating...
+                </>
+              ) : (
+                "Generate & Publish"
+              )}
+            </button>
+          </div>
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Quiz Meta */}

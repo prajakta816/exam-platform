@@ -31,6 +31,10 @@ const attemptSchema = new mongoose.Schema({
   feedback: {
     type: String,
     default: ""
+  },
+  answers: {
+    type: [Number],
+    default: []
   }
 
 }, { timestamps: true });

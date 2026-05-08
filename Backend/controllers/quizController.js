@@ -158,6 +158,7 @@ export const attemptQuiz = TryCatch(async (req, res) => {
     totalQuestions,
     percentage,
     feedback,
+    answers, // ✅ Save student choices
   });
 
   // 🆕 Create Notification for Creator (if not self)

@@ -22,7 +22,7 @@ import {
 
 const router = express.Router();
 
-router.get("/history", protect, getUserHistory);
+router.get("/my-attempts", protect, getUserHistory);
 router.get("/leaderboard/:quizId", protect, getLeaderboard);
 
 export default router;

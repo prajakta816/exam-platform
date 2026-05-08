@@ -18,7 +18,7 @@ const Notes = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
+    const userData = sessionStorage.getItem("user");
     if (userData) setUser(JSON.parse(userData));
     fetchNotes(page);
   }, [page]);
