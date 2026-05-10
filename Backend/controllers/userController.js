@@ -25,8 +25,8 @@ export const searchUsers = TryCatch(async (req, res) => {
 export const getUserProfile = TryCatch(async (req, res) => {
   const user = await User.findById(req.params.id)
     .select("-password")
-    .populate("followers", "name profilePic")
-    .populate("following", "name profilePic");
+    .populate("followers", "name profilePic role")
+    .populate("following", "name profilePic role");
 
   if (!user) return res.status(404).json({ message: "User not found" });
 

@@ -1,15 +1,20 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import API from "../../services/api";
-import { Sparkles, ArrowRight, Newspaper, Cpu, Code, Zap } from "lucide-react";
+import { 
+  Sparkles, 
+  ArrowRight, 
+  Zap, 
+  ExternalLink,
+  Newspaper,
+  Cpu,
+  Code
+} from "lucide-react";
 
 const Home = () => {
   const [news, setNews] = useState([]);
   const [headline, setHeadline] = useState("AI & Engineering News");
   const [loading, setLoading] = useState(true);
-
-  const [dailyQuiz, setDailyQuiz] = useState(null);
-  const [quizLoading, setQuizLoading] = useState(true);
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -20,115 +25,97 @@ const Home = () => {
         setNews(Array.isArray(res.data.news) ? res.data.news : []);
       } catch (err) {
         console.error("Failed to fetch daily news", err);
-        setHeadline("AI & Engineering News");
         setNews([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchNews();
   }, []);
 
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        const res = await API.get("/daily-quiz");
-        setDailyQuiz(res.data);
-      } catch (err) {
-        console.error("Failed to fetch daily quiz", err);
-      } finally {
-        setQuizLoading(false);
-      }
-    };
-    fetchQuiz();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Hero Section */}
-      <section className="relative py-20 overflow-hidden bg-white border-b border-slate-100">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-indigo-50/50 -skew-x-12 translate-x-1/4"></div>
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-sm font-bold mb-6 animate-in fade-in slide-in-from-left-4 duration-500">
-              <Zap size={16} fill="currentColor" />
-              <span>Real-time Technology Updates</span>
+    <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-600">
+      
+      {/* 🚀 HERO SECTION */}
+      <section className="relative w-full min-h-[85vh] flex items-center pt-20 overflow-hidden bg-slate-900">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] bg-indigo-600 rounded-full blur-[120px] animate-pulse"></div>
+          <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] bg-violet-600 rounded-full blur-[100px] delay-700"></div>
+        </div>
+
+        <div className="w-full max-w-[1440px] mx-auto px-6 md:px-12 relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
+            <div className="inline-flex items-center gap-3 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-full text-xs font-black uppercase tracking-[0.2em]">
+              <Zap size={14} className="fill-current" />
+              <span>Technology Pulse</span>
             </div>
-            <h1 className="text-6xl md:text-7xl font-black text-slate-900 mb-6 leading-tight tracking-tight">
-              Master Your Exams with <span className="text-indigo-600">AI Intelligence</span>
+            <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.95] tracking-tighter">
+              Master the <br/>
+              <span className="bg-gradient-to-r from-indigo-400 via-violet-400 to-indigo-400 bg-clip-text text-transparent bg-300% animate-gradient">Future of AI.</span>
             </h1>
-            <p className="text-xl text-slate-500 mb-10 leading-relaxed max-w-2xl">
-              Stay ahead of the curve with daily engineering insights and AI-powered quiz generation. Join the community of future-ready engineers.
+            <p className="text-xl text-slate-400 max-w-xl leading-relaxed font-medium">
+              Join the world's most advanced engineering community. Stay ahead with daily technical insights and AI-driven breakdowns of the industry's biggest breakthroughs.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <a href="/register" className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-bold text-lg shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95">
-                Get Started Free
-              </a>
-              <a href="#news" className="px-10 py-5 bg-white border-2 border-slate-100 text-slate-600 rounded-2xl font-bold text-lg hover:bg-slate-50 transition-all flex items-center gap-2">
-                Explore News <ArrowRight size={20} />
-              </a>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Link to="/register" className="px-10 py-5 bg-indigo-600 text-white rounded-2xl font-bold text-lg hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-500/20 flex items-center justify-center gap-3 active:scale-95 group">
+                Get Started <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <Link to="/login" className="px-10 py-5 bg-white/5 border border-white/10 text-white rounded-2xl font-bold text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-2">
+                Sign In
+              </Link>
             </div>
+          </div>
+          
+          <div className="hidden lg:block relative group">
+            <img 
+              src="https://images.unsplash.com/photo-1620712943543-bcc4628c9757?auto=format&fit=crop&q=80&w=1000" 
+              alt="AI Intelligence" 
+              className="w-full aspect-square object-cover rounded-[3rem] shadow-2xl border border-white/10 group-hover:scale-[1.02] transition-transform duration-700"
+            />
           </div>
         </div>
       </section>
 
-      {/* News Section */}
-      <section id="news" className="py-24 max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-          <div>
-            <h2 className="text-4xl font-black text-slate-900 mb-4 flex items-center gap-4">
-              <div className="p-3 bg-indigo-600 text-white rounded-2xl">
-                <Newspaper size={32} />
-              </div>
+      {/* 📰 AI INSIGHTS FEED */}
+      <main className="w-full max-w-[1440px] mx-auto px-6 md:px-12 py-24">
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-3 text-indigo-600 font-black uppercase tracking-widest text-xs">
+              <Sparkles size={16} /> 
+              <span>Curated Insights</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
               {headline}
             </h2>
-            <p className="text-slate-500 text-lg font-medium">Curated daily updates from the world of technology and engineering.</p>
+            <p className="text-slate-500 text-lg font-medium max-w-2xl">
+              Fresh technical deep-dives and engineering breakthroughs, updated daily by our AI discovery engine.
+            </p>
           </div>
           <div className="text-right">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em]">Auto-updated daily</span>
+            <span className="text-[10px] font-black text-slate-300 uppercase tracking-[0.3em]">Synced • {new Date().toLocaleDateString()}</span>
           </div>
         </div>
 
-        {/* Daily Quiz Section */}
-        {quizLoading ? (
-          <div className="text-center py-8">Loading Daily Quiz...</div>
-        ) : dailyQuiz ? (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-[2rem] shadow-xl border border-indigo-100 dark:border-indigo-800 mb-12">
-            <h2 className="text-3xl font-black text-indigo-600 mb-4">Today's Daily Quiz</h2>
-            <p className="text-slate-600 mb-6">{dailyQuiz.title || "Test your knowledge with today's quiz!"}</p>
-            <Link to={`/quiz/${dailyQuiz._id}`} className="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all">
-              Start Quiz
-              <ArrowRight size={16} className="inline ml-2" />
-            </Link>
-          </div>
-        ) : null}
-
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="bg-white rounded-[2.5rem] p-4 border border-slate-100 animate-pulse">
-                <div className="w-full h-60 bg-slate-100 rounded-[2rem] mb-6"></div>
-                <div className="h-6 bg-slate-100 rounded-full w-3/4 mb-4"></div>
-                <div className="h-4 bg-slate-100 rounded-full w-full mb-2"></div>
-                <div className="h-4 bg-slate-100 rounded-full w-5/6"></div>
-              </div>
+              <div key={i} className="bg-slate-50 rounded-[2.5rem] p-6 h-[450px] animate-pulse"></div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {news.map((item, idx) => (
               <div 
                 key={idx} 
-                className="group bg-white rounded-[2.5rem] p-4 border border-slate-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 flex flex-col"
+                className="group flex flex-col bg-white border border-slate-100 rounded-[2.5rem] p-5 hover:shadow-2xl hover:shadow-indigo-100 hover:-translate-y-2 transition-all duration-500"
               >
-                <div className="relative h-60 overflow-hidden rounded-[2rem] mb-6">
+                <div className="relative w-full aspect-video overflow-hidden rounded-[2rem] mb-6 shadow-sm">
                   <img 
-                    src={item.urlToImage} 
+                    src={item.urlToImage || "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&q=80&w=800"} 
                     alt={item.title} 
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute top-4 left-4">
+                  <div className="absolute top-4 right-4">
                     <span className="px-4 py-2 bg-white/90 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest text-indigo-600 shadow-sm">
                       {idx % 2 === 0 ? <Cpu size={14} className="inline mr-1 mb-1" /> : <Code size={14} className="inline mr-1 mb-1" />}
                       Tech Insight
@@ -136,59 +123,82 @@ const Home = () => {
                   </div>
                 </div>
                 
-                <div className="px-2 flex-grow">
-                  <h3 className="text-xl font-black text-slate-800 mb-3 line-clamp-2 leading-tight group-hover:text-indigo-600 transition-colors">
+                <div className="flex-grow px-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full"></span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Article</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-800 leading-tight mb-4 group-hover:text-indigo-600 transition-colors line-clamp-2">
                     {item.title}
                   </h3>
-                  <p className="text-slate-500 text-sm leading-relaxed mb-6 line-clamp-3 font-medium">
-                    {item.description || "No description available for this update. Click 'Read More' to view the full details of this technology breakthrough."}
+                  <p className="text-slate-500 text-sm font-medium leading-relaxed mb-6 line-clamp-3">
+                    {item.description || "Deep dive into the latest technological advancements shaping our world."}
                   </p>
                 </div>
 
-                <div className="mt-auto px-2 pb-2">
+                <div className="pt-2">
                   <a 
                     href={item.url} 
                     target="_blank" 
                     rel="noreferrer"
-                    className="w-full flex items-center justify-center gap-3 py-4 bg-slate-50 text-slate-600 rounded-2xl font-bold hover:bg-indigo-600 hover:text-white transition-all shadow-sm group/btn"
+                    className="flex items-center justify-center gap-2 w-full py-4 bg-slate-50 text-slate-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all group/btn"
                   >
-                    Read Article 
-                    <ArrowRight size={18} className="group-hover/btn:translate-x-1 transition-transform" />
+                    Read Story <ExternalLink size={14} className="group-hover/btn:scale-110 transition-transform" />
                   </a>
                 </div>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </main>
 
-      {/* Trust Section */}
-      <section className="bg-slate-900 py-24 text-center">
-        <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-8 leading-tight">
-            Ready to Accelerate Your <br/><span className="text-indigo-400">Engineering Journey?</span>
-          </h2>
-          <p className="text-slate-400 text-lg mb-12 max-w-2xl mx-auto font-medium">
-            Join thousands of students and teachers building the future of technical education. Create your first AI quiz in seconds.
-          </p>
-          <div className="flex flex-wrap justify-center gap-6">
-            <div className="flex items-center gap-3 bg-white/5 px-6 py-4 rounded-2xl border border-white/10">
-              <Sparkles className="text-indigo-400" />
-              <div className="text-left">
-                <p className="text-white font-bold leading-none">10k+</p>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">AI Quizzes</p>
-              </div>
+      {/* 🏁 DENSE FOOTER */}
+      <footer className="w-full bg-slate-50 pt-20 pb-10 border-t border-slate-100">
+        <div className="max-w-[1440px] mx-auto px-6 md:px-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+            <div className="lg:col-span-2 space-y-6">
+              <Link to="/" className="flex items-center gap-2">
+                <div className="bg-indigo-600 p-2 rounded-xl">
+                  <Sparkles className="text-white" size={24} />
+                </div>
+                <span className="text-2xl font-black tracking-tight text-slate-900 uppercase">
+                  EXAMPRO
+                </span>
+              </Link>
+              <p className="text-slate-500 text-sm leading-relaxed max-w-sm font-medium">
+                The world's leading adaptive learning platform for engineers. Empowering the next generation of technical talent through AI-driven insights.
+              </p>
             </div>
-            <div className="flex items-center gap-3 bg-white/5 px-6 py-4 rounded-2xl border border-white/10">
-              <Zap className="text-amber-400" />
-              <div className="text-left">
-                <p className="text-white font-bold leading-none">Daily</p>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">Tech Updates</p>
+
+            {[
+              { title: "Platform", links: ["Features", "Live Arena", "AI Quiz Lab", "Leaderboards"] },
+              { title: "Resources", links: ["Daily News", "Engineering Notes", "Help Center", "Community"] },
+              { title: "Company", links: ["About Us", "Privacy Policy", "Terms of Service", "Contact"] }
+            ].map((col, idx) => (
+              <div key={idx}>
+                <h5 className="font-black text-slate-900 uppercase tracking-widest text-xs mb-6">{col.title}</h5>
+                <ul className="space-y-4">
+                  {col.links.map((link, lIdx) => (
+                    <li key={lIdx}>
+                      <a href="#" className="text-slate-500 hover:text-indigo-600 transition-colors text-sm font-bold">{link}</a>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            ))}
+          </div>
+          
+          <div className="pt-10 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">© 2026 EXAMPRO AI. All Rights Reserved.</p>
+            <div className="flex items-center gap-8">
+              <span className="flex items-center gap-2 text-xs font-black text-emerald-500">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div> All Systems Operational
+              </span>
             </div>
           </div>
         </div>
-      </section>
+      </footer>
+
     </div>
   );
 };
