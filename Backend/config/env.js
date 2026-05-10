@@ -14,3 +14,12 @@ export const GEMINI_FALLBACK_MODELS = (
   .split(",")
   .map((model) => model.trim())
   .filter(Boolean);
+
+export const EMAIL_USER = process.env.EMAIL_USER;
+export const EMAIL_PASS = process.env.EMAIL_PASS;
+export const EMAIL_SERVICE = process.env.EMAIL_SERVICE;
+
+export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+export const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";

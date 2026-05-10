@@ -18,16 +18,29 @@ import commentRoutes from "./routes/commentRoutes.js";
 import ratingRoutes from "./routes/ratingRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
-import { PORT } from "./config/env.js";
+import { PORT, FRONTEND_URL } from "./config/env.js";
+import session from "express-session";
+import passport from "passport";
+import "./config/passport.js";
 import { setupSocket } from "./socket/socketHandler.js";
 
 const app = express();
 const httpServer = createServer(app);
 
+// MIDDLEWARE
+app.use(session({
+  secret: "secret",
+  resave: false,
+  saveUninitialized: true,
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Configure Socket.io
 const io = new Server(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173", FRONTEND_URL],
     methods: ["GET", "POST"],
     credentials: true
   },
@@ -42,7 +55,7 @@ app.use(helmet({
 }));
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", FRONTEND_URL],
   credentials: true
 }));
 
@@ -77,12 +90,45 @@ app.use("/api/results", resultRoutes);
 // Static files (Images)
 app.use("/uploads", express.static("uploads"));
 
+// Error Handler
+app.use((err, req, res, next) => {
+  console.error("Error:", err.message);
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  res.status(statusCode).json({ 
+    message: err.message,
+    stack: process.env.NODE_ENV === "production" ? null : err.stack,
+  });
+});
+
 // Setup Socket.io
 setupSocket(io);
+
+// 🚀 ONE-TIME DATA MIGRATION: Mark old battle quizzes
+import Quiz from "./models/Quiz.js";
+const migrateData = async () => {
+  console.log("🔄 Data Migration: Scanning for legacy battle quizzes...");
+  try {
+    const result = await Quiz.updateMany(
+      { 
+        origin: { $ne: "battle" },
+        $or: [
+          { roomCode: { $ne: null } },
+          { title: { $regex: "Live Test|123456", $options: "i" } },
+          { description: { $regex: "Live Session|Live Test|room", $options: "i" } }
+        ]
+      },
+      { $set: { origin: "battle", isHidden: true } }
+    );
+    console.log(`✅ Data Migration: Updated ${result.modifiedCount} legacy battle quizzes.`);
+  } catch (error) {
+    console.error("❌ Data Migration Error:", error);
+  }
+};
 
 const startServer = (port) => {
   const server = httpServer.listen(port, () => {
     console.log(`Server running on ${port}`);
+    migrateData(); // Run migration after server starts
   });
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {

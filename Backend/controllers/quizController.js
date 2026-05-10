@@ -132,6 +132,10 @@ export const attemptQuiz = TryCatch(async (req, res) => {
   const quiz = await Quiz.findById(quizId);
   if (!quiz) throw new Error("Quiz not found");
 
+  if (quiz.origin === "battle") {
+    return res.status(403).json({ message: "This is a battle quiz and cannot be attempted normally." });
+  }
+
   let score = 0;
 
   quiz.questions.forEach((q, i) => {

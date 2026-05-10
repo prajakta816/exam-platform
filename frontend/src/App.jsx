@@ -23,6 +23,9 @@ import LiveDashboard from "./pages/LiveRoom/LiveDashboard";
 import LiveJoin from "./pages/LiveRoom/LiveJoin";
 import LiveRoom from "./pages/LiveRoom/LiveRoom";
 import LiveHistory from "./pages/LiveRoom/LiveHistory";
+import VerifyEmail from "./pages/Auth/VerifyEmail";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 
 function App() {
   return (
@@ -51,6 +54,9 @@ function App() {
             <Route path="/live-join" element={<ProtectedRoute><LiveJoin /></ProtectedRoute>} />
             <Route path="/live-room/:roomCode" element={<ProtectedRoute><LiveRoom /></ProtectedRoute>} />
             <Route path="/live-history" element={<ProtectedRoute><LiveHistory /></ProtectedRoute>} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
           </Routes>
         </div>
       </BrowserRouter>

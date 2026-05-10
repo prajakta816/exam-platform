@@ -69,6 +69,15 @@ const quizSchema = new mongoose.Schema({
     type: String,
     default: null,
   },
+  origin: {
+    type: String,
+    enum: ["standard", "battle"],
+    default: "standard",
+  },
+  isHidden: {
+    type: Boolean,
+    default: false,
+  },
 
   questions: {
     type: [questionSchema],

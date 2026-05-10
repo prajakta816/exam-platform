@@ -21,6 +21,13 @@ export const searchUsers = TryCatch(async (req, res) => {
   res.json(users);
 });
 
+// 🚀 Get My Profile
+export const getMyProfile = TryCatch(async (req, res) => {
+  const user = await User.findById(req.user.id).select("-password");
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json(user);
+});
+
 // 🚀 Get User Profile
 export const getUserProfile = TryCatch(async (req, res) => {
   const user = await User.findById(req.params.id)
@@ -36,7 +43,7 @@ export const getUserProfile = TryCatch(async (req, res) => {
 
   const canSeeContent = user.isPublic || isFollowing || isOwner;
 
-  const quizzes = canSeeContent ? await Quiz.find({ createdBy: user._id }).sort("-createdAt") : [];
+  const quizzes = canSeeContent ? await Quiz.find({ createdBy: user._id, isHidden: { $ne: true } }).sort("-createdAt") : [];
   const notes = canSeeContent ? await Note.find({ uploadedBy: user._id }).sort("-createdAt") : [];
 
   res.json({

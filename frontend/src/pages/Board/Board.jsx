@@ -48,13 +48,13 @@ const Board = () => {
 
       // Filter duplicates and prioritize live versions
       const filteredQuizzes = rawQuizzes.reduce((acc, current) => {
-        const isLive = current.roomCode || current.description?.includes("Live Session");
+        const isBattle = current.origin === "battle";
         const existing = acc.find(q => q.title === current.title && String(q.createdBy?._id || q.createdBy) === String(current.createdBy?._id || current.createdBy));
         
         if (!existing) {
           acc.push(current);
-        } else if (isLive && !(existing.roomCode || existing.description?.includes("Live Session"))) {
-          // Replace regular quiz with live version if titles match
+        } else if (isBattle && existing.origin !== "battle") {
+          // Replace regular quiz with battle version if titles match
           const index = acc.indexOf(existing);
           acc[index] = current;
         }
@@ -280,7 +280,7 @@ const Board = () => {
                   <span className="text-sm font-bold text-slate-600">{quiz.createdBy?.name}</span>
                 </div>
                 <div onClick={() => {
-                  const isLiveQuiz = quiz.roomCode || quiz.description?.includes("Live Session");
+                  const isLiveQuiz = quiz.origin === "battle";
                   if (isLiveQuiz) {
                     navigate(`/rank/${quiz._id}`);
                   } else {
@@ -289,8 +289,16 @@ const Board = () => {
                 }}>
                   <h3 className="text-xl font-bold text-slate-800 mb-2 group-hover:text-indigo-600 transition-colors">{quiz.title}</h3>
                   <p className="text-slate-500 text-sm mb-4 line-clamp-1">{quiz.description}</p>
-                  <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
-                    {(quiz.roomCode || quiz.description?.includes("Live Session")) ? "View Results" : "Attempt Quiz"} <ArrowRight size={14} />
+                  <div className="flex items-center gap-2 font-black text-[10px] uppercase tracking-[0.2em]">
+                    {quiz.origin === "battle" ? (
+                      <span className="flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-1 rounded-lg border border-amber-100">
+                        <Trophy size={14} /> Review Performance
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2 text-indigo-600">
+                        Attempt Quiz <ArrowRight size={14} />
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -356,8 +364,8 @@ const Board = () => {
                     <div className="flex-grow">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h4 className="font-bold text-slate-800 text-lg">{quiz.title}</h4>
-                        {quiz.roomCode && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[10px] font-black rounded-full uppercase tracking-tighter">Live Dash</span>
+                        {quiz.origin === "battle" && (
+                          <span className="px-2 py-0.5 bg-red-100 text-red-600 text-[8px] font-black rounded-full uppercase tracking-widest border border-red-200">Live Room</span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">
@@ -370,7 +378,7 @@ const Board = () => {
                   <button 
                     onClick={() => {
                       if (user.role === "teacher") {
-                        if (quiz.roomCode) {
+                        if (quiz.origin === "battle") {
                           // Navigate to live dashboard analytics for this specific test
                           navigate(`/live-dashboard?roomCode=${quiz.roomCode}`);
                         } else {

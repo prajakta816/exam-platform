@@ -88,7 +88,22 @@ const Profile = () => {
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
   if (!profile) return <div className="text-center mt-20">User not found</div>;
 
-  const { user, quizzes, notes } = profile;
+  const { user, quizzes: rawQuizzes, notes } = profile;
+  
+  // Smart Deduplication: Merge standard and battle versions of the same quiz
+  const quizzes = rawQuizzes.reduce((acc, current) => {
+    const isBattle = current.origin === "battle";
+    const existing = acc.find(q => q.title === current.title);
+    
+    if (!existing) {
+      acc.push(current);
+    } else if (isBattle && existing.origin !== "battle") {
+      // Replace standard version with Battle version to show the "Live" label
+      const index = acc.indexOf(existing);
+      acc[index] = current;
+    }
+    return acc;
+  }, []);
 
   // Helper component for user lists
   const UserList = ({ users, type }) => (
@@ -266,7 +281,18 @@ const Profile = () => {
                     <p className="text-slate-500 font-medium text-sm mb-8">{quiz.questions.length} Questions • {quiz.difficulty || 'Pro'}</p>
                     
                     <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-50">
-                      <button onClick={() => navigate(`/quiz/${quiz._id}`)} className="flex items-center gap-3 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 shadow-xl shadow-indigo-100">Attempt</button>
+                      {quiz.origin === "battle" ? (
+                        <span className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg font-black text-[10px] uppercase tracking-widest border border-amber-100">
+                          Live Room Quiz
+                        </span>
+                      ) : (
+                        <button 
+                          onClick={() => navigate(`/quiz/${quiz._id}`)} 
+                          className="flex items-center gap-3 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 shadow-xl shadow-indigo-100"
+                        >
+                          Attempt
+                        </button>
+                      )}
                       <button onClick={() => navigate(`/rank/${quiz._id}`)} className="p-3 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all"><Trophy size={20} /></button>
                     </div>
                   </div>

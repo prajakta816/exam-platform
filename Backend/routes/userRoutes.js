@@ -10,7 +10,8 @@ import {
   rejectFollowRequest,
   getMyFollowRequests,
   updateProfile,
-  changePassword
+  changePassword,
+  getMyProfile
 } from "../controllers/userController.js";
 import multer from "multer";
 
@@ -27,6 +28,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+router.get("/profile/me", protect, getMyProfile);
 router.get("/search", protect, searchUsers);
 router.get("/requests", protect, getMyFollowRequests);
 router.get("/following-content", protect, getFollowingContent);

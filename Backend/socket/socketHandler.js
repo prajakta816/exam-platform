@@ -1,6 +1,8 @@
 import Room from "../models/Room.js";
 import User from "../models/User.js";
 import TestResult from "../models/TestResult.js";
+import Attempt from "../models/Attempt.js";
+import { generateFeedback } from "../utils/aiService.js";
 
 // In-memory store for active room timers and participants
 const roomTimers = new Map();
@@ -287,6 +289,30 @@ const endTestFlow = async (io, roomCode) => {
     }));
 
     await TestResult.insertMany(resultsToSave);
+
+    // 🆕 Create Attempt records for each student so they can "Review" later
+    await Promise.all(resultsToSave.map(async (res) => {
+      const totalQuestions = room.questions.length;
+      const percentage = (res.score / totalQuestions) * 100;
+      
+      // Generate individual feedback
+      const feedback = await generateFeedback({
+        quizTitle: room.testName,
+        score: res.score,
+        totalQuestions,
+        percentage
+      });
+
+      await Attempt.create({
+        user: res.studentId,
+        quiz: res.quizId,
+        score: res.score,
+        totalQuestions,
+        percentage,
+        feedback,
+        answers: res.answers
+      });
+    }));
 
     const leaderboard = resultsToSave.slice(0, 3);
     const allResults = resultsToSave;

@@ -60,6 +60,22 @@ const userSchema = new mongoose.Schema({
     default: true,
   },
 
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
+
+  verificationToken: String,
+
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
+
+  googleId: {
+    type: String,
+    unique: true,
+    sparse: true, // Allows null for non-google users
+  },
+
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);

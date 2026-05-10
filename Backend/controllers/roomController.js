@@ -21,7 +21,7 @@ export const createRoom = TryCatch(async (req, res) => {
     if (!existingRoom) isUnique = true;
   }
 
-  // ✅ Senior Dev Fix: Also save this as a permanent Quiz so it shows up in "My Created AI Quizzes"
+  // Create a background quiz for results tracking
   const quiz = await Quiz.create({
     title: req.body.testName || "Live Test",
     description: `Live Session Quiz: ${req.body.testName || "Live Test"}`,
@@ -32,8 +32,10 @@ export const createRoom = TryCatch(async (req, res) => {
       timer: q.timer || 30
     })),
     createdBy: req.user._id,
-    difficulty: "Medium", // Default for live tests
-    roomCode: roomCode, // ✅ Store roomCode in Quiz for easier navigation
+    difficulty: "Medium",
+    roomCode: roomCode,
+    origin: "battle",
+    isHidden: true, // Hides it from teacher's main profile list
   });
 
   const room = await Room.create({
@@ -44,8 +46,14 @@ export const createRoom = TryCatch(async (req, res) => {
     isLive: true,
     allowTeacherAttempt: req.body.allowTeacherAttempt || false,
     teacher: req.user._id,
-    quizId: quiz._id, // Link to the newly created quiz
-    questions: (req.body.questions || []).map(q => ({ ...q, correctStudents: [] })),
+    quizId: quiz._id,
+    questions: (req.body.questions || []).map(q => ({ 
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      timer: q.timer || 30,
+      correctStudents: [] 
+    })),
   });
 
   res.status(201).json({
