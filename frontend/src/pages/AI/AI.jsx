@@ -9,6 +9,7 @@ const AI = () => {
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [quiz, setQuiz] = useState(null);
+  const [difficulty, setDifficulty] = useState("Medium");
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
@@ -17,10 +18,11 @@ const AI = () => {
     try {
       let res;
       if (mode === "text") {
-        res = await API.post("/ai/generate-text", { text });
+        res = await API.post("/ai/generate-text", { text, difficulty });
       } else {
         const formData = new FormData();
         formData.append("file", file);
+        formData.append("difficulty", difficulty);
         res = await API.post("/ai/generate-pdf", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -103,6 +105,25 @@ const AI = () => {
             </label>
           </div>
         )}
+
+        <div className="mt-8 flex flex-col gap-4">
+          <label className="text-sm font-black uppercase tracking-widest text-slate-400">Select Difficulty</label>
+          <div className="flex gap-4">
+            {["Easy", "Medium", "Hard"].map((level) => (
+              <button
+                key={level}
+                onClick={() => setDifficulty(level)}
+                className={`flex-1 py-4 rounded-xl font-black transition-all border-2 ${
+                  difficulty === level
+                    ? "bg-violet-600 border-violet-600 text-white shadow-lg shadow-violet-100 scale-105"
+                    : "bg-white border-slate-100 text-slate-500 hover:border-violet-200"
+                }`}
+              >
+                {level}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <button
           onClick={handleGenerate}

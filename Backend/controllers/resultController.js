@@ -8,8 +8,33 @@ import TryCatch from "../utils/TryCatch.js";
 export const getStudentResults = TryCatch(async (req, res) => {
   const studentId = req.params.id;
 
-  const results = await TestResult.find({ studentId })
-    .sort({ date: -1 });
+  const rawResults = await TestResult.find({ studentId })
+    .populate({
+      path: "quizId",
+      populate: {
+        path: "createdBy",
+        select: "name profilePic"
+      }
+    })
+    .sort({ date: -1 })
+    .lean();
+
+  const results = [];
+  for (const r of rawResults) {
+    let teacherObj = null;
+    if (r.quizId && r.quizId.createdBy) {
+      teacherObj = r.quizId.createdBy;
+    } else {
+      const room = await Room.findOne({ roomCode: r.roomCode }).select("teacherName teacher").populate("teacher", "name profilePic").lean();
+      if (room) {
+        teacherObj = room.teacher || { name: room.teacherName };
+      }
+    }
+    results.push({
+      ...r,
+      teacherObj
+    });
+  }
 
   res.status(200).json({
     success: true,

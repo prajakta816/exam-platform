@@ -20,7 +20,9 @@ import {
   Radio,
   Trophy,
   Menu,
-  ChevronDown
+  ChevronDown,
+  Map,
+  Star
 } from "lucide-react";
 import { getLocalUser } from "../utils/auth";
 import API from "../services/api";
@@ -144,6 +146,7 @@ export default function Navbar() {
                   <NavLink to="/live-dashboard" icon={Radio}>Battle</NavLink>
                 )}
                 <NavLink to="/notes" icon={FileText}>Notes</NavLink>
+                <NavLink to="/study-planner" icon={Map}>Planner</NavLink>
                 <NavLink to="/requests" icon={Users}>Requests</NavLink>
               </>
             )}
@@ -225,10 +228,16 @@ export default function Navbar() {
                           ) : (
                             notifications.map(n => (
                               <div key={n._id} className={`p-6 border-b border-slate-50 last:border-none transition-colors flex gap-4 ${!n.isRead ? 'bg-indigo-50/20' : 'hover:bg-slate-50'}`}>
-                                <div className="w-12 h-12 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center font-black text-indigo-600 shrink-0 shadow-sm overflow-hidden">
-                                  {n.sender?.profilePic ? (
-                                    <img src={`http://localhost:5000/${n.sender.profilePic}`} className="w-full h-full object-cover" />
-                                  ) : n.sender?.name.charAt(0) || "!"}
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border-2 ${
+                                  n.type === 'start_live' ? 'bg-red-50 text-red-600 border-red-100' :
+                                  n.type === 'note_download' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                  n.type === 'quiz_rating' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                  'bg-indigo-50 text-indigo-600 border-indigo-100'
+                                }`}>
+                                  {n.type === 'start_live' ? <Radio size={20}/> :
+                                   n.type === 'note_download' ? <BookOpen size={20}/> :
+                                   n.type === 'quiz_rating' ? <Star size={20}/> :
+                                   <Users size={20}/>}
                                 </div>
                                 <div className="flex-grow">
                                   <p className="text-sm text-slate-800 leading-snug font-bold mb-1">{n.message}</p>

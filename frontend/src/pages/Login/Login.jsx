@@ -10,6 +10,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [otp, setOtp] = useState("");
   const [searchParams] = useSearchParams();
 
   const navigate = useNavigate();
@@ -40,7 +42,11 @@ export default function Login() {
       sessionStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/board");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid credentials or login failed.");
+      const errorMsg = err.response?.data?.message || "Invalid credentials or login failed.";
+      setError(errorMsg);
+      if (errorMsg.includes("verify your email")) {
+        // We can prompt them to click the resend button.
+      }
     }
   };
 
@@ -49,13 +55,32 @@ export default function Login() {
     setResendLoading(true);
     setResendMessage("");
     try {
-      const res = await API.post("/auth/resend-verification", { email });
+      const res = await API.post("/auth/resend-otp", { email });
       setResendMessage(res.data.message);
+      setIsVerifying(true);
       setError("");
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to resend verification email");
+      setError(err.response?.data?.message || "Failed to resend verification OTP");
     } finally {
       setResendLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError("");
+    setResendMessage("");
+    try {
+      const res = await API.post("/auth/verify-otp", { email, otp });
+      setResendMessage("Account verified successfully! Logging you in...");
+      setTimeout(() => {
+        sessionStorage.setItem("token", res.data.token);
+        sessionStorage.setItem("user", JSON.stringify(res.data.user));
+        navigate("/board");
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || "OTP verification failed");
     }
   };
 
@@ -89,46 +114,89 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
+        {isVerifying ? (
+          <div className="py-4">
+            <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">Verify Your Email</h3>
+            <p className="text-gray-600 mb-6 text-center text-sm">
+              We've sent a 6-digit OTP to <strong>{email}</strong>. Please enter it below.
+            </p>
+
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  required
+                  maxLength="6"
+                  className="w-full px-4 py-3 text-center text-2xl tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white/50"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                />
               </div>
-              <input
-                type="email"
-                required
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white/50"
-                placeholder="you@example.com"
-                onChange={(e) => setEmail(e.target.value)}
-              />
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              >
+                Verify OTP & Login
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Didn't receive the code?{' '}
+                <button
+                  onClick={handleResendVerification}
+                  disabled={resendLoading}
+                  className="text-indigo-600 hover:text-indigo-800 font-semibold transition bg-transparent border-none cursor-pointer disabled:opacity-50"
+                >
+                  {resendLoading ? "Sending..." : "Resend OTP"}
+                </button>
+              </p>
             </div>
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
+        ) : (
+          <form onSubmit={handleLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="email"
+                  required
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white/50"
+                  placeholder="you@example.com"
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-              <input
-                type="password"
-                required
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white/50"
-                placeholder="••••••••"
-                onChange={(e) => setPassword(e.target.value)}
-              />
             </div>
-          </div>
 
-          <button 
-            type="submit" 
-            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-          >
-            Sign In
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="password"
+                  required
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white/50"
+                  placeholder="••••••••"
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Sign In
+            </button>
+          </form>
+        )}
 
         <div className="mt-4 flex items-center justify-between">
           <Link to="/forgot-password" size="sm" className="text-sm text-indigo-600 hover:text-indigo-800 transition">

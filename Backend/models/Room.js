@@ -11,6 +11,10 @@ const roomSchema = new mongoose.Schema(
       type: String,
       default: "Live Test",
     },
+    quizId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Quiz",
+    },
     teacherId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -73,7 +73,7 @@ const EditProfile = () => {
       });
 
       // Update local storage user name and pic if changed
-      const localUser = JSON.parse(sessionStorage.getItem("user"));
+      const localUser = JSON.parse(sessionStorage.getItem("user")) || {};
       localUser.name = res.data.user.name;
       localUser.profilePic = res.data.user.profilePic;
       sessionStorage.setItem("user", JSON.stringify(localUser));

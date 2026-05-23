@@ -2,6 +2,7 @@ import Room from "../models/Room.js";
 import Quiz from "../models/Quiz.js";
 import { generateRoomCode } from "../utils/generateRoomCode.js";
 import TryCatch from "../utils/TryCatch.js";
+import { logActivity } from "../utils/ActivityLog.js";
 
 // @desc    Create a new live room
 // @route   POST /api/room/create
@@ -54,6 +55,14 @@ export const createRoom = TryCatch(async (req, res) => {
       timer: q.timer || 30,
       correctStudents: [] 
     })),
+  });
+
+  // 🆕 Log Activity
+  await logActivity({
+    user: req.user._id,
+    type: "start_live",
+    message: `started a new live quiz: "${room.testName}"`,
+    metadata: { roomCode: room.roomCode, testName: room.testName }
   });
 
   res.status(201).json({

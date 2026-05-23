@@ -4,6 +4,7 @@ import API from "../../services/api";
 import LeaderboardTable from "../../components/Leaderboard/LeaderboardTable";
 import CommentSection from "../../components/CommentSection";
 import RatingSystem from "../../components/RatingSystem";
+import { Sparkles, CheckCircle2 } from "lucide-react";
 
 function Quiz() {
   const { id } = useParams();
@@ -14,6 +15,8 @@ function Quiz() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
+  const [explanations, setExplanations] = useState({});
+  const [explaining, setExplaining] = useState({});
 
   useEffect(() => {
     fetchQuiz();
@@ -52,11 +55,55 @@ function Quiz() {
     try {
       const res = await API.post(`/quiz/attempt/${id}`, { answers });
       setResult(res.data);
+      
+      // 🆕 AUTOMATICALLY fetch AI explanations for all incorrect answers sequentially
+      (async () => {
+        for (let i = 0; i < quiz.questions.length; i++) {
+          if (answers[i] !== quiz.questions[i].correctAnswer) {
+            setExplaining(prev => ({ ...prev, [i]: true }));
+            try {
+              const q = quiz.questions[i];
+              const aiRes = await API.post("/ai/explanation", {
+                question: q.question,
+                options: q.options,
+                correctAnswer: q.correctAnswer,
+                studentAnswer: answers[i]
+              });
+              setExplanations(prev => ({ ...prev, [i]: aiRes.data.explanation }));
+              await new Promise(r => setTimeout(r, 1500));
+            } catch (err) {
+              console.error("Auto AI explanation error:", err);
+            } finally {
+              setExplaining(prev => ({ ...prev, [i]: false }));
+            }
+          }
+        }
+      })();
+
     } catch (err) {
       console.error("Error submitting quiz", err);
       alert("Failed to submit quiz.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const getAIExplanation = async (qIdx) => {
+    if (explanations[qIdx]) return;
+    setExplaining(prev => ({ ...prev, [qIdx]: true }));
+    try {
+      const q = quiz.questions[qIdx];
+      const res = await API.post("/ai/explanation", {
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        studentAnswer: answers[qIdx]
+      });
+      setExplanations(prev => ({ ...prev, [qIdx]: res.data.explanation }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setExplaining(prev => ({ ...prev, [qIdx]: false }));
     }
   };
 
@@ -130,6 +177,62 @@ function Quiz() {
             Visit Creator
           </button>
         </div>
+      </div>
+
+      {/* 🆕 Detailed Review Section */}
+      <div className="space-y-8 mb-12">
+        <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight flex items-center gap-3">
+          <span className="p-2 bg-indigo-600 text-white rounded-lg"><Sparkles size={20}/></span> Detailed Review
+        </h3>
+        {quiz.questions.map((q, qIdx) => (
+          <div key={qIdx} className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden group hover:shadow-xl transition-all">
+            <div className="p-8">
+              <div className="flex justify-between items-start gap-4 mb-6">
+                <p className="text-lg font-bold text-slate-800">
+                  <span className="text-indigo-600 mr-2">Q{qIdx + 1}.</span> {q.question}
+                </p>
+                <div className={`shrink-0 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${answers[qIdx] === q.correctAnswer ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
+                  {answers[qIdx] === q.correctAnswer ? 'Correct' : 'Incorrect'}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {q.options.map((opt, oIdx) => (
+                  <div key={oIdx} className={`p-4 rounded-xl border-2 text-sm font-bold flex items-center justify-between ${
+                    oIdx === q.correctAnswer ? 'border-emerald-500 bg-emerald-50 text-emerald-700' :
+                    oIdx === answers[qIdx] ? 'border-red-500 bg-red-50 text-red-700' :
+                    'border-slate-50 bg-slate-50 text-slate-500'
+                  }`}>
+                    {opt}
+                    {oIdx === q.correctAnswer && <CheckCircle2 size={16} />}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-slate-50">
+                {!explanations[qIdx] ? (
+                  <button 
+                    onClick={() => getAIExplanation(qIdx)}
+                    disabled={explaining[qIdx]}
+                    className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 transition-colors"
+                  >
+                    {explaining[qIdx] ? <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" /> : <Sparkles size={14}/>}
+                    {answers[qIdx] !== q.correctAnswer ? (explaining[qIdx] ? "AI Tutor analyzing wrong answer..." : "Explain Wrong Answer with AI") : "Explain with AI"}
+                  </button>
+                ) : (
+                  <div className={`p-6 rounded-2xl border animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm ${answers[qIdx] !== q.correctAnswer ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-100' : 'bg-indigo-50/50 border-indigo-100'}`}>
+                    <p className={`text-xs font-black uppercase tracking-widest mb-3 flex items-center gap-2 ${answers[qIdx] !== q.correctAnswer ? 'text-red-600' : 'text-indigo-400'}`}>
+                      <Sparkles size={14} /> {answers[qIdx] !== q.correctAnswer ? "AI Tutor: Why Your Answer Was Incorrect" : "AI Explanation"}
+                    </p>
+                    <p className="text-sm text-slate-700 font-medium leading-relaxed italic">
+                      "{explanations[qIdx]}"
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">

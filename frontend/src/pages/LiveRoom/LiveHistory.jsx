@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { getLocalUser } from "../../utils/auth";
 
 const LiveHistory = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
-  const user = JSON.parse(sessionStorage.getItem("user"));
+  const user = getLocalUser() || {};
 
   useEffect(() => {
     const fetchHistory = async () => {
+      if (!user.id) return;
       try {
         const { data } = await axios.get(
           `http://localhost:5000/api/results/student/${user.id}`,
@@ -25,7 +27,7 @@ const LiveHistory = () => {
       }
     };
     fetchHistory();
-  }, [user.id]);
+  }, [user?.id]);
 
   if (loading) return <div className="p-10 text-center">Loading history...</div>;
 

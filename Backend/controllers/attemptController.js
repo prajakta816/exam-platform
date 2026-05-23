@@ -50,7 +50,14 @@ export const getUserHistory = TryCatch(async (req, res) => {
   const limit = isPaginated ? 5 : 1000; // Return more for analytics if not paginated
 
   const history = await Attempt.find({ user: req.user.id })
-    .populate("quiz", "title")
+    .populate({
+      path: "quiz",
+      select: "title origin difficulty createdBy",
+      populate: {
+        path: "createdBy",
+        select: "name profilePic"
+      }
+    })
     .sort({ createdAt: -1 })
     .skip(isPaginated ? (page - 1) * limit : 0)
     .limit(limit);

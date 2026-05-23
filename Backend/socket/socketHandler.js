@@ -290,38 +290,53 @@ const endTestFlow = async (io, roomCode) => {
 
     await TestResult.insertMany(resultsToSave);
 
-    // 🆕 Create Attempt records for each student so they can "Review" later
-    await Promise.all(resultsToSave.map(async (res) => {
-      const totalQuestions = room.questions.length;
-      const percentage = (res.score / totalQuestions) * 100;
-      
-      // Generate individual feedback
-      const feedback = await generateFeedback({
-        quizTitle: room.testName,
-        score: res.score,
-        totalQuestions,
-        percentage
-      });
-
-      await Attempt.create({
-        user: res.studentId,
-        quiz: res.quizId,
-        score: res.score,
-        totalQuestions,
-        percentage,
-        feedback,
-        answers: res.answers
-      });
-    }));
-
     const leaderboard = resultsToSave.slice(0, 3);
     const allResults = resultsToSave;
 
+    // Emit instantly so UI doesn't hang!
     io.to(roomCode).emit("test-ended", { 
       message: "Test has ended. Results are calculated.",
       leaderboard,
       allResults
     });
+
+    // 🆕 Create Attempt records for each student asynchronously to prevent rate limits (429)
+    (async () => {
+      for (const res of resultsToSave) {
+        if (!res.quizId) {
+          console.warn(`[WARNING] Missing quizId for room ${room.roomCode}. Skipping Attempt creation.`);
+          continue;
+        }
+        
+        try {
+          const totalQuestions = room.questions.length;
+          const percentage = (res.score / totalQuestions) * 100;
+          
+          // Generate individual feedback
+          const feedback = await generateFeedback({
+            quizTitle: room.testName,
+            score: res.score,
+            totalQuestions,
+            percentage
+          });
+
+          await Attempt.create({
+            user: res.studentId,
+            quiz: res.quizId,
+            score: res.score,
+            totalQuestions,
+            percentage,
+            feedback,
+            answers: res.answers
+          });
+          
+          // Wait 2 seconds between API calls to prevent 429 Too Many Requests
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        } catch (err) {
+          console.error("Error creating attempt in background:", err.message);
+        }
+      }
+    })();
 
   } catch (error) {
     console.error("End test error:", error);

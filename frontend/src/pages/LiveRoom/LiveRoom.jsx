@@ -3,12 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, Timer, ArrowUpRight, ArrowDownRight, Minus, Users, Play, SkipForward, Power } from "lucide-react";
+import { getLocalUser } from "../../utils/auth";
 
 const LiveRoom = () => {
   const { roomCode } = useParams();
   const navigate = useNavigate();
   const socketRef = useRef();
-  const [user, setUser] = useState(JSON.parse(sessionStorage.getItem("user")));
+  const [user, setUser] = useState(getLocalUser() || {});
   const [currentQuestion, setCurrentQuestion] = useState(null);
   const [timeLeft, setTimeLeft] = useState(0);
   const [initialTime, setInitialTime] = useState(30);
@@ -111,9 +112,9 @@ const LiveRoom = () => {
 
     // 🛑 Cleanup
     return () => {
-      socketRef.current.disconnect();
+      if (socketRef.current) socketRef.current.disconnect();
     };
-  }, [roomCode, user.id, user.name, user.role]);
+  }, [roomCode, user?.id, user?.name, user?.role]);
 
   const handleStartTest = () => socketRef.current.emit("start-test", { roomCode, userId: user.id });
   const handleNextQuestion = () => socketRef.current.emit("next-question", { roomCode, userId: user.id });

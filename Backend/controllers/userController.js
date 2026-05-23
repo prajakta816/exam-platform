@@ -2,6 +2,9 @@ import User from "../models/User.js";
 import Quiz from "../models/Quiz.js";
 import Note from "../models/Note.js";
 import Notification from "../models/Notification.js";
+import Rating from "../models/Rating.js";
+import Room from "../models/Room.js";
+import Activity from "../models/Activity.js";
 import TryCatch from "../utils/TryCatch.js";
 
 // 🚀 Search Users
@@ -46,14 +49,38 @@ export const getUserProfile = TryCatch(async (req, res) => {
   const quizzes = canSeeContent ? await Quiz.find({ createdBy: user._id, isHidden: { $ne: true } }).sort("-createdAt") : [];
   const notes = canSeeContent ? await Note.find({ uploadedBy: user._id }).sort("-createdAt") : [];
 
+  // 🆕 Teacher Specific: Ratings and Live Sessions
+  let ratings = [];
+  let liveSessions = [];
+  if (user.role === "teacher") {
+    ratings = await Rating.find({ targetId: { $in: quizzes.map(q => q._id) }, targetType: "quiz" });
+    liveSessions = await Room.find({ teacher: user._id }).sort("-createdAt").limit(5);
+  }
+
+  // 🆕 Activities (Last 10)
+  const activities = await Activity.find({ user: user._id }).sort("-createdAt").limit(10);
+
   res.json({
     user,
     quizzes,
     notes,
+    ratings,
+    liveSessions,
+    activities,
     isFollowing,
     hasRequested,
     isPrivate: !canSeeContent && !user.isPublic
   });
+});
+
+// 🚀 Get Global Activity Feed
+export const getGlobalActivityFeed = TryCatch(async (req, res) => {
+  const activities = await Activity.find()
+    .populate("user", "name profilePic role")
+    .sort("-createdAt")
+    .limit(20);
+
+  res.json(activities);
 });
 
 // 🚀 Follow User / Send Request

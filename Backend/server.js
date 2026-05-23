@@ -46,7 +46,7 @@ const io = new Server(httpServer, {
   },
 });
 
-connectDB();
+// connectDB(); // Moved to startup sequence
 
 // 🛡️ SECURITY MIDDLEWARE
 // Set crossOriginResourcePolicy to false to allow images to be loaded by frontend
@@ -126,19 +126,31 @@ const migrateData = async () => {
 };
 
 const startServer = (port) => {
-  const server = httpServer.listen(port, () => {
-    console.log(`Server running on ${port}`);
-    migrateData(); // Run migration after server starts
-  });
-  server.on('error', (err) => {
+  httpServer.once('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      const newPort = port + 1;
+      const newPort = parseInt(port, 10) + 1;
       console.warn(`Port ${port} in use, trying port ${newPort}`);
       startServer(newPort);
     } else {
       console.error('Server error:', err);
     }
   });
+
+  httpServer.listen(port, () => {
+    console.log(`Server running on ${port}`);
+    migrateData(); // Run migration after server starts
+  });
 };
 
-startServer(PORT);
+// Initialize Database and Start Server
+const init = async () => {
+  try {
+    await connectDB();
+    startServer(PORT);
+  } catch (error) {
+    console.error("❌ Critical: Failed to initialize application:", error);
+    process.exit(1);
+  }
+};
+
+init();

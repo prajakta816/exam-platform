@@ -135,7 +135,7 @@ const generateFeedbackWithGemini = async (prompt) => {
   throw lastError || new Error("Gemini feedback failed");
 };
 
-export const generateMCQ = async (text, numQuestions = 5, isTopic = false) => {
+export const generateMCQ = async (text, numQuestions = 5, isTopic = false, difficulty = "Medium") => {
   const questionCount = Math.min(Math.max(parseInt(numQuestions, 10) || 5, 1), 25);
   const hasGemini = !!GEMINI_API_KEY;
   const hasOpenAI = hasOpenAIKey();
@@ -154,6 +154,8 @@ export const generateMCQ = async (text, numQuestions = 5, isTopic = false) => {
   const prompt = `
   Context: You are a professional educator creating an exam.
   Task: Generate ${questionCount} high-quality multiple-choice questions (MCQs) based on the ${isTopic ? 'following topic/prompt' : 'provided text'}.
+  
+  Difficulty Level: ${difficulty}
   
   Constraints:
   1. Output must be a VALID JSON OBJECT.
@@ -291,4 +293,102 @@ export const generateFeedback = async ({ quizTitle, score, totalQuestions, perce
     console.error("AI FEEDBACK ERROR:", error.message);
     return `You scored ${score}/${totalQuestions}. Keep practicing to improve your understanding of ${quizTitle}!`;
   }
+};
+
+// 🆕 AI Explanation Generator
+export const generateExplanation = async ({ question, options, correctAnswer, studentAnswer }) => {
+  const prompt = `
+  As an AI Tutor, explain why the student's answer was wrong and why the correct answer is right.
+  Question: ${question}
+  Options: ${JSON.stringify(options)}
+  Correct Index: ${correctAnswer}
+  Student's Index: ${studentAnswer}
+  
+  Keep it friendly, educational, and under 50 words.
+  `;
+  try {
+    return await generateFeedbackWithGemini(prompt);
+  } catch (err) {
+    return "Keep studying! Review the core concepts for this topic.";
+  }
+};
+
+// 🆕 AI Flashcards Generator
+export const generateFlashcards = async (text) => {
+  const prompt = `
+  Extract 10 key concepts from this text and turn them into flashcards.
+  Format: JSON array of objects with "front" and "back" keys.
+  Text: ${text.slice(0, 5000)}
+  `;
+  try {
+    const res = await generateWithGemini(prompt);
+    return safeParse(res);
+  } catch (err) {
+    return [];
+  }
+};
+
+// 🆕 AI Study Planner
+export const generateStudyPlan = async ({ topic, examDate, currentLevel = "Beginner" }) => {
+  const prompt = `
+  Create a detailed study roadmap for the topic "${topic}".
+  The exam is on ${examDate}.
+  Current level: ${currentLevel}.
+  Format: JSON array of objects with "day", "task", "details".
+  Provide a logical progression from fundamentals to advanced concepts.
+  `;
+  try {
+    const res = await generateWithGemini(prompt);
+    return safeParse(res);
+  } catch (err) {
+    return [{ day: "Day 1", task: "Introduction", details: "Start with basic concepts." }];
+  }
+};
+
+// 🆕 AI Weakness Analysis
+export const analyzeWeaknesses = async (history) => {
+  const historyText = history.map(h => `Quiz: ${h.quiz?.title}, Score: ${h.percentage}%`).join("\n");
+  const prompt = `
+  Based on this student's quiz history, identify their top 3 weak areas and top 3 strong areas.
+  History:
+  ${historyText}
+  
+  Format: JSON object with "weaknesses" (array) and "strengths" (array).
+  Include a brief "tip" for each weakness.
+  `;
+  try {
+    const res = await generateWithGemini(prompt);
+    return safeParse(res);
+  } catch (err) {
+    return { weaknesses: [], strengths: [] };
+  }
+};
+
+// 🆕 AI Chat Tutor
+export const chatWithTutor = async ({ context, message, history = [] }) => {
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+
+  const chat = model.startChat({
+    history: history.slice(-6).map(h => ({
+      role: h.role === "user" ? "user" : "model",
+      parts: [{ text: h.text }],
+    })),
+    generationConfig: { maxOutputTokens: 500 },
+  });
+
+  const fullPrompt = `
+  Context from study notes:
+  ${context.slice(0, 8000)}
+  
+  Student says: ${message}
+  
+  Instructions:
+  - Use the provided context to answer.
+  - If the answer isn't in the context, use your general knowledge but mention it's supplementary.
+  - Be a helpful, encouraging teacher.
+  `;
+
+  const result = await chat.sendMessage(fullPrompt);
+  return result.response.text();
 };

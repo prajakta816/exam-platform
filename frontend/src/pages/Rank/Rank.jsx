@@ -2,14 +2,36 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import API from "../../services/api";
 import LeaderboardTable from "../../components/Leaderboard/LeaderboardTable";
-import { ArrowLeft, BookOpen, CheckCircle, Info, Trophy, Medal } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle, Info, Trophy, Medal, Sparkles } from "lucide-react";
+import { getLocalUser } from "../../utils/auth";
 
 export default function Rank() {
   const { id } = useParams();
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(true);
   const [userAttempt, setUserAttempt] = useState(null);
-  const user = JSON.parse(sessionStorage.getItem("user"));
+  const [explanations, setExplanations] = useState({});
+  const [explaining, setExplaining] = useState({});
+  const user = getLocalUser() || {};
+
+  const getAIExplanation = async (qIdx) => {
+    if (explanations[qIdx] || !quiz?.questions?.[qIdx] || !userAttempt) return;
+    setExplaining(prev => ({ ...prev, [qIdx]: true }));
+    try {
+      const q = quiz.questions[qIdx];
+      const res = await API.post("/ai/explanation", {
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.correctAnswer,
+        studentAnswer: userAttempt.answers[qIdx]
+      });
+      setExplanations(prev => ({ ...prev, [qIdx]: res.data.explanation }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setExplaining(prev => ({ ...prev, [qIdx]: false }));
+    }
+  };
 
   useEffect(() => {
     fetchQuizDetails();
@@ -58,7 +80,33 @@ export default function Rank() {
         );
       }
 
-      if (myAttempt) setUserAttempt(myAttempt);
+      if (myAttempt) {
+        setUserAttempt(myAttempt);
+        
+        // 🆕 AUTOMATICALLY fetch AI explanations for all incorrect answers sequentially
+        (async () => {
+          for (let i = 0; i < quiz?.questions?.length; i++) {
+            if (myAttempt?.answers?.[i] !== undefined && myAttempt.answers[i] !== quiz.questions[i].correctAnswer) {
+              setExplaining(prev => ({ ...prev, [i]: true }));
+              try {
+                const q = quiz.questions[i];
+                const aiRes = await API.post("/ai/explanation", {
+                  question: q.question,
+                  options: q.options,
+                  correctAnswer: q.correctAnswer,
+                  studentAnswer: myAttempt.answers[i]
+                });
+                setExplanations(prev => ({ ...prev, [i]: aiRes.data.explanation }));
+                await new Promise(r => setTimeout(r, 1500));
+              } catch (err) {
+                console.error("Auto AI explanation error:", err);
+              } finally {
+                setExplaining(prev => ({ ...prev, [i]: false }));
+              }
+            }
+          }
+        })();
+      }
     } catch (err) {
       console.error("Failed to fetch user attempt:", err.response?.data?.message || err.message);
     }
@@ -174,6 +222,30 @@ export default function Rank() {
                     );
                   })}
                 </div>
+
+                {studentAnswer !== undefined && (
+                  <div className="mt-6 pt-6 border-t border-slate-50">
+                    {!explanations[index] ? (
+                      <button 
+                        onClick={() => getAIExplanation(index)}
+                        disabled={explaining[index]}
+                        className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:text-indigo-700 transition-colors"
+                      >
+                        {explaining[index] ? <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" /> : <Sparkles size={14}/>}
+                        {studentAnswer !== q.correctAnswer ? (explaining[index] ? "AI Tutor analyzing wrong answer..." : "Explain Wrong Answer with AI") : "Explain with AI"}
+                      </button>
+                    ) : (
+                      <div className={`p-6 rounded-2xl border animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm ${studentAnswer !== q.correctAnswer ? 'bg-gradient-to-br from-red-50 to-orange-50 border-red-100' : 'bg-indigo-50/50 border-indigo-100'}`}>
+                        <p className={`text-xs font-black uppercase tracking-widest mb-3 flex items-center gap-2 ${studentAnswer !== q.correctAnswer ? 'text-red-600' : 'text-indigo-400'}`}>
+                          <Sparkles size={14} /> {studentAnswer !== q.correctAnswer ? "AI Tutor: Why Your Answer Was Incorrect" : "AI Explanation"}
+                        </p>
+                        <p className="text-sm text-slate-700 font-medium leading-relaxed italic">
+                          "{explanations[index]}"
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             );
           })}

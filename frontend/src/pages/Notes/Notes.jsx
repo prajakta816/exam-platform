@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import API from "../../services/api";
-import { Download, ShoppingCart, Trash2, Edit, Plus, FileText, Lock, Unlock, MessageSquare, X } from "lucide-react";
+import { Download, ShoppingCart, Trash2, Edit, Plus, FileText, Lock, Unlock, MessageSquare, X, Brain, Bot, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import CommentSection from "../../components/CommentSection";
 import RatingSystem from "../../components/RatingSystem";
@@ -141,6 +141,22 @@ const Notes = () => {
                     {note.uploadedBy?.name?.charAt(0)}
                   </div>
                   <span>Shared by {note.uploadedBy?.name}</span>
+                </div>
+
+                {/* 🆕 AI Toolkit */}
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <button 
+                    onClick={() => navigate(`/flashcards/${note._id}`)}
+                    className="flex-1 min-w-[120px] flex items-center justify-center gap-2 bg-violet-50 text-violet-600 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-600 hover:text-white transition-all border border-violet-100"
+                  >
+                    <Brain size={14} /> Flashcards
+                  </button>
+                  <button 
+                    onClick={() => navigate(`/chat-tutor/${note._id}`)}
+                    className="flex-1 min-w-[120px] flex items-center justify-center gap-2 bg-indigo-50 text-indigo-600 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all border border-indigo-100"
+                  >
+                    <Bot size={14} /> Chat Tutor
+                  </button>
                 </div>
               </div>
 

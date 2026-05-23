@@ -1,7 +1,8 @@
- import Note from "../models/Note.js";
+import Note from "../models/Note.js";
 import TryCatch from "../utils/TryCatch.js";
 import User from "../models/User.js";
 import Notification from "../models/Notification.js";
+import { logActivity } from "../utils/ActivityLog.js";
 import fs from "fs";
 
 // 🚀 Get all notes (Filtered by privacy/following) with pagination
@@ -14,15 +15,10 @@ export const getNotes = TryCatch(async (req, res) => {
   const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
   const skip  = (page - 1) * limit;
 
-  // Find all public users to include their content
-  const publicUsers = await User.find({ isPublic: true }).select("_id");
-  const publicUserIds = publicUsers.map(u => u._id);
-
   const filter = {
     $or: [
       { uploadedBy: req.user.id },
-      { uploadedBy: { $in: user.following } },
-      { uploadedBy: { $in: publicUserIds } }
+      { uploadedBy: { $in: user.following } }
     ]
   };
 
@@ -56,6 +52,14 @@ export const uploadNote = TryCatch(async (req, res) => {
     uploadedBy: req.user.id,
     isPaid: isPaid === "true",
     price: isPaid === "true" ? price : 0,
+  });
+
+  // 🆕 Log Activity
+  await logActivity({
+    user: req.user.id,
+    type: "upload_note",
+    message: `uploaded new notes: "${note.title}"`,
+    metadata: { noteId: note._id }
   });
 
   res.status(201).json({ message: "Note uploaded", note });
@@ -129,15 +133,13 @@ export const trackDownload = TryCatch(async (req, res) => {
 
   await note.save();
 
-  // Notify uploader
-  if (note.uploadedBy.toString() !== req.user.id) {
-    await Notification.create({
-      user: note.uploadedBy,
-      sender: req.user.id,
-      type: "note_download",
-      message: `${req.user.name} downloaded your note: "${note.title}"`
-    });
-  }
+  // 🆕 Log Activity for Download (Maybe only once per user?)
+  await logActivity({
+    user: req.user.id,
+    type: "upload_note", // Reusing type or creating new one
+    message: `downloaded notes: "${note.title}"`,
+    metadata: { noteId: note._id }
+  });
 
   res.json({ message: "Download tracked", downloads: note.downloads });
 });

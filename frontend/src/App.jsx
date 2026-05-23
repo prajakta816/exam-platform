@@ -15,6 +15,9 @@ import Analytics from "./pages/Analytics/Analytics";
 import AI from "./pages/AI/AI";
 import Notes from "./pages/Notes/Notes";
 import UploadNote from "./pages/Notes/UploadNote";
+import Flashcards from "./pages/Notes/Flashcards";
+import StudyPlanner from "./pages/Notes/StudyPlanner";
+import ChatTutor from "./pages/Notes/ChatTutor";
 import Profile from "./pages/Profile/Profile";
 import Search from "./pages/Search/Search";
 import FollowRequests from "./pages/FollowRequests/FollowRequests";
@@ -46,6 +49,9 @@ function App() {
             <Route path="/requests" element={<ProtectedRoute><FollowRequests /></ProtectedRoute>} />
             <Route path="/notes" element={<ProtectedRoute><Notes /></ProtectedRoute>} />
             <Route path="/notes/upload" element={<ProtectedRoute><UploadNote /></ProtectedRoute>} />
+            <Route path="/flashcards/:noteId" element={<ProtectedRoute><Flashcards /></ProtectedRoute>} />
+            <Route path="/study-planner" element={<ProtectedRoute><StudyPlanner /></ProtectedRoute>} />
+            <Route path="/chat-tutor/:noteId" element={<ProtectedRoute><ChatTutor /></ProtectedRoute>} />
             <Route path="/quiz/:id" element={<ProtectedRoute><Quiz /></ProtectedRoute>} />
             <Route path="/rank/:id" element={<ProtectedRoute><Rank /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><History /></ProtectedRoute>} />

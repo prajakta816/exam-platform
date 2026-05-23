@@ -12,7 +12,12 @@ import {
   Lock, 
   Trophy, 
   Trash2,
-  UserPlus
+  UserPlus,
+  Star,
+  Radio,
+  Zap,
+  Clock,
+  Layout
 } from "lucide-react";
 
 const Profile = () => {
@@ -88,7 +93,7 @@ const Profile = () => {
   if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>;
   if (!profile) return <div className="text-center mt-20">User not found</div>;
 
-  const { user, quizzes: rawQuizzes, notes } = profile;
+  const { user, quizzes: rawQuizzes, notes, achievements = [], ratings = [], liveSessions = [], activities = [] } = profile;
   
   // Smart Deduplication: Merge standard and battle versions of the same quiz
   const quizzes = rawQuizzes.reduce((acc, current) => {
@@ -243,17 +248,19 @@ const Profile = () => {
       ) : (
         <div className="space-y-8">
           {/* Enhanced Tabs */}
-          <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/50 border border-slate-100 rounded-3xl">
+          <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/50 border border-slate-100 rounded-3xl overflow-x-auto no-scrollbar">
             {[
               { id: "quizzes", icon: BrainCircuit, label: `Quizzes (${quizzes.length})` },
               { id: "notes", icon: BookOpen, label: `Notes (${notes.length})` },
+              user.role === "student" ? { id: "achievements", icon: Trophy, label: `Achievements (${achievements.length})` } : { id: "live", icon: Radio, label: `Live Sessions (${liveSessions.length})` },
+              { id: "activities", icon: Zap, label: "Activity" },
               { id: "followers", icon: Users, label: `Followers (${user.followers.length})` },
               { id: "following", icon: UserPlus, label: `Following (${user.following.length})` }
             ].map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 min-w-[120px] py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 min-w-[140px] py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all whitespace-nowrap ${
                   activeTab === tab.id ? "bg-white text-indigo-600 shadow-xl shadow-slate-200/50" : "text-slate-500 hover:bg-white/50"
                 }`}
               >
@@ -267,36 +274,47 @@ const Profile = () => {
           <div className="animate-in fade-in slide-in-from-bottom-6 duration-700">
             {activeTab === "quizzes" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {quizzes.map(quiz => (
-                  <div key={quiz._id} className="group bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-indigo-100 transition-all relative overflow-hidden flex flex-col">
-                    <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                      <BrainCircuit size={80} className="text-indigo-600" />
+                {quizzes.map(quiz => {
+                  const quizRatings = ratings.filter(r => r.targetId === quiz._id);
+                  const avgRating = quizRatings.length > 0 ? (quizRatings.reduce((a, b) => a + b.rating, 0) / quizRatings.length).toFixed(1) : "0.0";
+                  
+                  return (
+                    <div key={quiz._id} className="group bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm hover:shadow-2xl hover:border-indigo-100 transition-all relative overflow-hidden flex flex-col">
+                      <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <BrainCircuit size={80} className="text-indigo-600" />
+                      </div>
+                      <div className="flex justify-between items-start mb-4 relative z-10">
+                        <h3 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">{quiz.title}</h3>
+                        {currentUser?.id === userId && (
+                          <button onClick={() => handleDeleteQuiz(quiz._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={20} /></button>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-4 mb-8">
+                        <p className="text-slate-500 font-medium text-sm">{quiz.questions.length} Questions • {quiz.difficulty || 'Pro'}</p>
+                        <div className="flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-600 rounded-lg text-[10px] font-black border border-amber-100">
+                          <Star size={10} fill="currentColor" /> {avgRating}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-50">
+                        {quiz.origin === "battle" ? (
+                          <span className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg font-black text-[10px] uppercase tracking-widest border border-amber-100">
+                            Live Room Quiz
+                          </span>
+                        ) : (
+                          <button 
+                            onClick={() => navigate(`/quiz/${quiz._id}`)} 
+                            className="flex items-center gap-3 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 shadow-xl shadow-indigo-100"
+                          >
+                            Attempt
+                          </button>
+                        )}
+                        <button onClick={() => navigate(`/rank/${quiz._id}`)} className="p-3 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all"><Trophy size={20} /></button>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-start mb-4 relative z-10">
-                      <h3 className="text-2xl font-black text-slate-800 leading-tight group-hover:text-indigo-600 transition-colors">{quiz.title}</h3>
-                      {currentUser?.id === userId && (
-                        <button onClick={() => handleDeleteQuiz(quiz._id)} className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"><Trash2 size={20} /></button>
-                      )}
-                    </div>
-                    <p className="text-slate-500 font-medium text-sm mb-8">{quiz.questions.length} Questions • {quiz.difficulty || 'Pro'}</p>
-                    
-                    <div className="flex items-center justify-between mt-auto pt-6 border-t border-slate-50">
-                      {quiz.origin === "battle" ? (
-                        <span className="px-4 py-2 bg-amber-50 text-amber-600 rounded-lg font-black text-[10px] uppercase tracking-widest border border-amber-100">
-                          Live Room Quiz
-                        </span>
-                      ) : (
-                        <button 
-                          onClick={() => navigate(`/quiz/${quiz._id}`)} 
-                          className="flex items-center gap-3 px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-indigo-700 shadow-xl shadow-indigo-100"
-                        >
-                          Attempt
-                        </button>
-                      )}
-                      <button onClick={() => navigate(`/rank/${quiz._id}`)} className="p-3 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-xl transition-all"><Trophy size={20} /></button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
 
@@ -317,10 +335,86 @@ const Profile = () => {
               </div>
             )}
 
+            {activeTab === "achievements" && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {achievements.length === 0 ? (
+                  <div className="col-span-3 text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-100 text-slate-400 font-black uppercase tracking-widest text-xs">No Achievements Yet</div>
+                ) : (
+                  achievements.map((ach, idx) => (
+                    <div key={idx} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm text-center group hover:shadow-2xl hover:border-amber-100 transition-all">
+                      <div className="w-20 h-20 bg-amber-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6 group-hover:scale-110 group-hover:rotate-6 transition-transform">
+                        <Trophy className="text-amber-500" size={40} />
+                      </div>
+                      <h4 className="text-lg font-black text-slate-800 mb-2">{ach.title}</h4>
+                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{new Date(ach.date).toLocaleDateString()}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === "live" && (
+              <div className="space-y-6">
+                {liveSessions.length === 0 ? (
+                  <div className="text-center py-20 bg-slate-50 rounded-[3rem] border-2 border-dashed border-slate-100 text-slate-400 font-black uppercase tracking-widest text-xs">No Live Sessions Hosted</div>
+                ) : (
+                  liveSessions.map(session => (
+                    <div key={session._id} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 hover:shadow-xl transition-all">
+                      <div className="flex items-center gap-6">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${session.status === 'ended' ? 'bg-slate-100 text-slate-400' : 'bg-red-50 text-red-600 animate-pulse'}`}>
+                          <Radio size={32} />
+                        </div>
+                        <div>
+                          <h4 className="text-xl font-black text-slate-800 mb-1">{session.testName}</h4>
+                          <div className="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                            <span className="flex items-center gap-1"><Users size={12}/> {session.students.length} Joined</span>
+                            <span className="flex items-center gap-1"><Clock size={12}/> {new Date(session.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex gap-3">
+                        <span className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border ${session.status === 'ended' ? 'bg-slate-50 text-slate-500 border-slate-200' : 'bg-red-100 text-red-600 border-red-200'}`}>
+                          {session.status}
+                        </span>
+                        {session.status === 'ended' && (
+                          <button 
+                            onClick={() => navigate(`/live-dashboard?roomCode=${session.roomCode}`)}
+                            className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-100 transition-all"
+                          >
+                            <Layout size={20} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === "activities" && (
+              <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
+                {activities.length === 0 ? (
+                  <div className="text-center py-20 bg-slate-50 text-slate-400 font-black uppercase tracking-widest text-xs">No Recent Activity</div>
+                ) : (
+                  activities.map((act, idx) => (
+                    <div key={idx} className="p-6 border-b border-slate-50 last:border-none flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                      <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+                        {act.type === 'quiz_score' ? <Trophy size={18}/> : act.type === 'upload_note' ? <BookOpen size={18}/> : <Zap size={18}/>}
+                      </div>
+                      <div className="flex-grow">
+                        <p className="text-sm font-bold text-slate-800">{act.message}</p>
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">{new Date(act.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
             {activeTab === "followers" && <UserList users={user.followers} type="followers" />}
             {activeTab === "following" && <UserList users={user.following} type="following" />}
 
-            {(activeTab === "quizzes" && quizzes.length === 0 || activeTab === "notes" && notes.length === 0) && (
+            {((activeTab === "quizzes" && quizzes.length === 0) || (activeTab === "notes" && notes.length === 0)) && (
               <div className="text-center py-24 bg-slate-50/50 rounded-[3rem] border-2 border-dashed border-slate-100 text-slate-400 font-black uppercase tracking-widest text-sm">Empty Hub</div>
             )}
           </div>

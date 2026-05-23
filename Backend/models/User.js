@@ -65,7 +65,8 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
 
-  verificationToken: String,
+  verificationOtp: String,
+  verificationOtpExpires: Date,
 
   resetPasswordToken: String,
   resetPasswordExpires: Date,
@@ -75,6 +76,12 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true, // Allows null for non-google users
   },
+
+  achievements: [{
+    title: String,
+    date: { type: Date, default: Date.now },
+    icon: String, // e.g., 'trophy', 'star'
+  }],
 
 }, { timestamps: true });
 

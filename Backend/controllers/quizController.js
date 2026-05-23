@@ -3,6 +3,7 @@ import Quiz from "../models/Quiz.js";
 import User from "../models/User.js";
 import Attempt from "../models/Attempt.js"; // ✅ FIX
 import Notification from "../models/Notification.js";
+import { logActivity } from "../utils/ActivityLog.js";
 import TryCatch from "../utils/TryCatch.js";
 import { generateFeedback } from "../utils/aiService.js"; // ✅ ADD THIS
 //import { verifyToken } from "../utils/verifyToken.js";
@@ -175,6 +176,28 @@ export const attemptQuiz = TryCatch(async (req, res) => {
     });
   }
 
+  // 🆕 Log Activity
+  await logActivity({
+    user: user.id,
+    type: "quiz_score",
+    message: `scored ${Math.round(percentage)}% in ${quiz.title}`,
+    metadata: { quizId: quiz._id, score, percentage }
+  });
+
+  // 🆕 Achievement: Perfect Score
+  if (percentage === 100) {
+    const student = await User.findById(user.id);
+    const hasAchievement = student.achievements.some(a => a.title === "Perfect Score");
+    if (!hasAchievement) {
+      student.achievements.push({
+        title: "Perfect Score",
+        icon: "trophy",
+        date: new Date()
+      });
+      await student.save();
+    }
+  }
+
   res.json({
     message: "Quiz attempted",
     score,
@@ -223,15 +246,10 @@ export const getAllQuizzes = TryCatch(async (req, res) => {
   const limit = Math.min(50, Math.max(1, parseInt(req.query.limit) || 10));
   const skip  = (page - 1) * limit;
 
-  // Find all public users to include their content
-  const publicUsers = await User.find({ isPublic: true }).select("_id");
-  const publicUserIds = publicUsers.map(u => u._id);
-
   const filter = {
     $or: [
       { createdBy: req.user.id },
-      { createdBy: { $in: user.following } },
-      { createdBy: { $in: publicUserIds } }
+      { createdBy: { $in: user.following } }
     ]
   };
 

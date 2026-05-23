@@ -4,11 +4,11 @@ import {
   registerUser,
   loginUser,
   getAdminData,
-  verifyEmail,
+  verifyOtp,
   forgotPassword,
   resetPassword,
   googleAuthCallback,
-  resendVerification,
+  resendOtp,
 } from "../controllers/authController.js";
 
 const router = express.Router();
@@ -17,8 +17,8 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.get("/admin", getAdminData);
 
-router.get("/verify-email/:token", verifyEmail);
-router.post("/resend-verification", resendVerification);
+router.post("/verify-otp", verifyOtp);
+router.post("/resend-otp", resendOtp);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);
 

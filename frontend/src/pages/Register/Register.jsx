@@ -8,6 +8,8 @@ export default function Register() {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "student" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [otp, setOtp] = useState("");
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
@@ -17,8 +19,39 @@ export default function Register() {
     try {
       const res = await API.post("/auth/register", form);
       setSuccess(res.data.message);
+      setIsRegistered(true);
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
+    }
+  };
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    try {
+      const res = await API.post("/auth/verify-otp", { email: form.email, otp });
+      setSuccess("Account verified successfully! Logging you in...");
+      setTimeout(() => {
+        // Assume context or store update here if needed, but for now navigate to login
+        // or directly home if token is saved
+        sessionStorage.setItem("token", res.data.token);
+        navigate("/"); // Or dashboard based on role
+        window.location.reload(); // Quick way to update auth state across app
+      }, 1500);
+    } catch (err) {
+      setError(err.response?.data?.message || "OTP verification failed");
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError("");
+    setSuccess("");
+    try {
+      const res = await API.post("/auth/resend-otp", { email: form.email });
+      setSuccess(res.data.message);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to resend OTP");
     }
   };
 
@@ -37,14 +70,58 @@ export default function Register() {
           </div>
         )}
 
-        {success ? (
-          <div className="text-center py-8">
-            <Check className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Check your email</h3>
-            <p className="text-gray-600 mb-6">{success}</p>
-            <Link to="/login" className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition">
-              Go to Login
-            </Link>
+        {success && !isRegistered && (
+          <div className="bg-green-50 text-green-600 p-3 rounded-lg text-sm text-center mb-4 border border-green-100">
+            {success}
+          </div>
+        )}
+
+        {isRegistered ? (
+          <div className="py-4">
+            <Shield className="h-16 w-16 text-indigo-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">Verify Your Email</h3>
+            <p className="text-gray-600 mb-6 text-center text-sm">
+              We've sent a 6-digit OTP to <strong>{form.email}</strong>. Please enter it below.
+            </p>
+
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div>
+                <input
+                  type="text"
+                  required
+                  maxLength="6"
+                  className="w-full px-4 py-3 text-center text-2xl tracking-widest border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white/50"
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+
+              {success && (
+                <div className="bg-green-50 text-green-600 p-3 rounded-lg text-sm text-center mb-4 border border-green-100">
+                  {success}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+              >
+                Verify OTP
+              </button>
+            </form>
+
+            <div className="mt-6 text-center">
+              <p className="text-sm text-gray-600">
+                Didn't receive the code?{' '}
+                <button
+                  onClick={handleResendOtp}
+                  className="text-indigo-600 hover:text-indigo-800 font-semibold transition bg-transparent border-none cursor-pointer"
+                >
+                  Resend OTP
+                </button>
+              </p>
+            </div>
           </div>
         ) : (
           <>

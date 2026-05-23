@@ -36,26 +36,27 @@ export const registerUser = TryCatch(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const otp = crypto.randomInt(100000, 999999).toString();
+  const otpExpires = Date.now() + 15 * 60 * 1000; // 15 mins
 
   const user = await User.create({
     name,
     email,
     password: hashedPassword,
     role: role === "teacher" ? "teacher" : "student",
-    verificationToken,
+    verificationOtp: otp,
+    verificationOtpExpires: otpExpires,
   });
-
-  const verificationUrl = `${FRONTEND_URL}/verify-email/${verificationToken}`;
 
   try {
     await sendEmail({
       email: user.email,
-      subject: "Email Verification - Exam Platform",
+      subject: "Email Verification OTP - Exam Platform",
       html: `
         <h1>Email Verification</h1>
-        <p>Please click the link below to verify your email:</p>
-        <a href="${verificationUrl}">${verificationUrl}</a>
+        <p>Your One-Time Password (OTP) for verifying your email is:</p>
+        <h2 style="font-size: 24px; font-weight: bold; color: #4F46E5; letter-spacing: 2px;">${otp}</h2>
+        <p>This OTP is valid for 15 minutes. Please do not share it with anyone.</p>
       `,
     });
   } catch (error) {
@@ -90,17 +91,17 @@ export const loginUser = TryCatch(async (req, res) => {
   const user = await User.findOne({ email }).select("+password");
 
   if (!user) {
-    throw new Error("User not found");
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 
   if (!user.isVerified) {
-    throw new Error("Please verify your email first");
+    return res.status(401).json({ message: "Please verify your email first" });
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
-    throw new Error("Invalid credentials");
+    return res.status(401).json({ message: "Invalid credentials" });
   }
 
   const token = jwt.sign(
@@ -137,31 +138,59 @@ export const getAdminData = TryCatch(async (req, res) => {
   });
 });
 
-// VERIFY EMAIL
-export const verifyEmail = TryCatch(async (req, res) => {
-  const { token } = req.params;
+// VERIFY OTP
+export const verifyOtp = TryCatch(async (req, res) => {
+  const { email, otp } = req.body;
 
-  // 1. Try to find user with this token
-  const user = await User.findOne({ verificationToken: token });
-
-  // 2. If not found, it might be already verified
-  if (!user) {
-    // We can't easily find which user it WAS, so we tell them to check login
-    return res.status(400).json({ 
-      message: "This link is invalid or has already been used. Please try logging in." 
-    });
+  if (!email || !otp) {
+    throw new Error("Email and OTP are required");
   }
 
-  // 3. Mark as verified
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
+  }
+
+  if (user.isVerified) {
+    return res.status(400).json({ message: "Account is already verified" });
+  }
+
+  if (user.verificationOtp !== otp) {
+    return res.status(400).json({ message: "Invalid OTP" });
+  }
+
+  if (user.verificationOtpExpires < Date.now()) {
+    return res.status(400).json({ message: "OTP has expired. Please request a new one." });
+  }
+
+  // Mark as verified
   user.isVerified = true;
-  user.verificationToken = undefined;
+  user.verificationOtp = undefined;
+  user.verificationOtpExpires = undefined;
   await user.save();
 
-  res.json({ message: "Email verified successfully! You can now login." });
+  // Generate token to automatically log them in
+  const token = jwt.sign(
+    { id: user._id, role: user.role },
+    JWT_SECRET,
+    { expiresIn: "7d" }
+  );
+
+  res.json({
+    message: "Email verified successfully!",
+    token,
+    user: {
+      id: user._id,
+      name: user.name,
+      role: user.role,
+      profilePic: user.profilePic,
+    },
+  });
 });
 
-// RESEND VERIFICATION EMAIL
-export const resendVerification = TryCatch(async (req, res) => {
+// RESEND OTP
+export const resendOtp = TryCatch(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
@@ -174,23 +203,23 @@ export const resendVerification = TryCatch(async (req, res) => {
     throw new Error("This account is already verified");
   }
 
-  const verificationToken = crypto.randomBytes(32).toString("hex");
-  user.verificationToken = verificationToken;
+  const otp = crypto.randomInt(100000, 999999).toString();
+  user.verificationOtp = otp;
+  user.verificationOtpExpires = Date.now() + 15 * 60 * 1000;
   await user.save();
-
-  const verificationUrl = `${FRONTEND_URL}/verify-email/${verificationToken}`;
 
   try {
     await sendEmail({
       email: user.email,
-      subject: "Resend: Email Verification - Exam Platform",
+      subject: "Resend: Email Verification OTP - Exam Platform",
       html: `
         <h1>Email Verification</h1>
-        <p>Please click the link below to verify your email:</p>
-        <a href="${verificationUrl}">${verificationUrl}</a>
+        <p>Your new One-Time Password (OTP) for verifying your email is:</p>
+        <h2 style="font-size: 24px; font-weight: bold; color: #4F46E5; letter-spacing: 2px;">${otp}</h2>
+        <p>This OTP is valid for 15 minutes. Please do not share it with anyone.</p>
       `,
     });
-    res.json({ message: "Verification link sent to your email" });
+    res.json({ message: "A new OTP has been sent to your email" });
   } catch (error) {
     throw new Error("Email could not be sent");
   }
