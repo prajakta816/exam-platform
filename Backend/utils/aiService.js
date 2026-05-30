@@ -392,3 +392,74 @@ export const chatWithTutor = async ({ context, message, history = [] }) => {
   const result = await chat.sendMessage(fullPrompt);
   return result.response.text();
 };
+
+// 🆕 AI Chat Tutor (OpenAI Model)
+export const chatWithOpenAI = async ({ context, message, history = [] }) => {
+  const hasOpenAI = hasOpenAIKey();
+
+  const systemPrompt = `You are a helpful, encouraging AI Study Tutor.
+You are assisting a student. Answer their questions based ONLY on the provided study notes.
+If the answer is not in the notes, use your general knowledge to answer, but explicitly mention that the information is supplementary and not found in the notes.
+
+Here are the study notes:
+---
+${context.slice(0, 15000)}
+---`;
+
+  const messages = [
+    { role: "system", content: systemPrompt }
+  ];
+
+  // Add history
+  history.slice(-10).forEach(h => {
+    messages.push({
+      role: h.role === "user" ? "user" : "assistant",
+      content: h.text || h.message || h.content || ""
+    });
+  });
+
+  // Add current message
+  messages.push({ role: "user", content: message });
+
+  if (hasOpenAI) {
+    try {
+      console.log("🤖 Chatting with OpenAI GPT-4o...");
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-4o",
+          messages: messages,
+          temperature: 0.7,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 30000
+        }
+      );
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      console.error("OpenAI Chat Error:", error.response?.data || error.message);
+    }
+  }
+
+  // Fallback to Gemini if OpenAI is not available or failed
+  console.log("🤖 OpenAI chat fallback/not available. Falling back to Gemini...");
+  if (GEMINI_API_KEY) {
+    try {
+      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL || "gemini-2.5-flash" });
+      
+      const fullPrompt = `${systemPrompt}\n\nStudent says: ${message}`;
+      const result = await model.generateContent(fullPrompt);
+      return result.response.text();
+    } catch (geminiError) {
+      console.error("Gemini fallback chat error:", geminiError);
+    }
+  }
+
+  return `[Mock AI Tutor] I read your note content (length: ${context.length} characters) and your question: "${message}". Please set up a valid OpenAI or Gemini API key to get real responses.`;
+};
+

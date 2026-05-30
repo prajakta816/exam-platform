@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { DarkModeProvider } from "./context/DarkModeContext";
+import AITutorWidget from "./components/AITutorWidget";
 
 import Home from "./pages/Home/Home";
 import Login from "./pages/Login/Login";
@@ -35,6 +36,7 @@ function App() {
     <DarkModeProvider>
       <BrowserRouter>
         <Navbar />
+        <AITutorWidget />
         <div className="min-h-screen bg-slate-50 dark:bg-slate-900 pt-16 text-slate-900 dark:text-slate-100 transition-colors duration-300">
           <Routes>
             <Route path="/" element={<Home />} />
