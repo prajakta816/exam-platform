@@ -1,13 +1,13 @@
 import mongoose from "mongoose";
 import Quiz from "../models/Quiz.js";
 import User from "../models/User.js";
-import Attempt from "../models/Attempt.js"; // ✅ FIX
+import Attempt from "../models/Attempt.js";
 import Notification from "../models/Notification.js";
 import { logActivity } from "../utils/ActivityLog.js";
 import TryCatch from "../utils/TryCatch.js";
-import { generateFeedback } from "../utils/aiService.js"; // ✅ ADD THIS
-//import { verifyToken } from "../utils/verifyToken.js";
-import { protect } from "../middleware/authMiddleware.js"; // ✅ ADD THIS
+import { generateFeedback } from "../utils/aiService.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { addXP } from "../utils/gamification.js"; // 🎮
 
 
 
@@ -184,6 +184,9 @@ export const attemptQuiz = TryCatch(async (req, res) => {
     metadata: { quizId: quiz._id, score, percentage }
   });
 
+  // 🎮 Award XP: Quiz Completed
+  addXP(user.id, 20).catch(() => {});
+
   // 🆕 Achievement: Perfect Score
   if (percentage === 100) {
     const student = await User.findById(user.id);
@@ -203,7 +206,7 @@ export const attemptQuiz = TryCatch(async (req, res) => {
     score,
     totalQuestions,
     percentage,
-    feedback, // ✅ ADD THIS
+    feedback,
     attemptId: attempt._id,
   });
 });

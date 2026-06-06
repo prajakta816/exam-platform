@@ -19,10 +19,11 @@ import {
   Sun,
   Radio,
   Trophy,
-  Menu,
   ChevronDown,
   Map,
-  Star
+  Star,
+  Swords,
+  Menu
 } from "lucide-react";
 import { getLocalUser } from "../utils/auth";
 import API from "../services/api";
@@ -36,6 +37,7 @@ export default function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [pendingBattles, setPendingBattles] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const searchRef = useRef(null);
@@ -72,8 +74,21 @@ export default function Navbar() {
     try {
       const res = await API.get("/notifications");
       setNotifications(res.data);
+      const battleRes = await API.get("/battle/pending");
+      setPendingBattles(battleRes.data);
     } catch (err) {
       console.error("Notif error", err);
+    }
+  };
+
+  const handleAcceptBattle = async (battleId) => {
+    try {
+      await API.post(`/battle/accept/${battleId}`);
+      navigate(`/battle/${battleId}`);
+      setShowNotifications(false);
+    } catch (err) {
+      console.error("Failed to accept battle", err);
+      alert(err.response?.data?.message || "Failed to accept battle");
     }
   };
 
@@ -212,7 +227,7 @@ export default function Navbar() {
                   <div className="relative" ref={notifRef}>
                     <button onClick={() => setShowNotifications(!showNotifications)} className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all relative">
                       <Bell size={22} />
-                      {notifications.filter(n => !n.isRead).length > 0 && (
+                      {(notifications.filter(n => !n.isRead).length > 0 || pendingBattles.length > 0) && (
                         <span className="absolute top-3 right-3 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
                       )}
                     </button>
@@ -223,7 +238,23 @@ export default function Navbar() {
                           <span className="text-[10px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full">Recent</span>
                         </div>
                         <div className="max-h-[450px] overflow-y-auto">
-                          {notifications.length === 0 ? (
+                          {pendingBattles.length > 0 && pendingBattles.map(battle => (
+                            <div key={battle._id} className="p-6 border-b border-slate-50 transition-colors flex gap-4 bg-orange-50/50 hover:bg-orange-50">
+                              <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border-2 bg-gradient-to-br from-orange-400 to-rose-500 text-white border-orange-200">
+                                <Swords size={20}/>
+                              </div>
+                              <div className="flex-grow">
+                                <p className="text-sm text-slate-800 leading-snug font-bold mb-2">
+                                  <span className="text-rose-600">{battle.challenger?.name}</span> challenged you to a Battle!
+                                </p>
+                                <button onClick={() => handleAcceptBattle(battle._id)} className="px-4 py-2 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-slate-800 transition-all">
+                                  Accept & Join
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {notifications.length === 0 && pendingBattles.length === 0 ? (
                             <div className="p-12 text-center text-slate-400 italic text-sm font-medium">Clear for take-off! No news yet.</div>
                           ) : (
                             notifications.map(n => (
@@ -232,11 +263,13 @@ export default function Navbar() {
                                   n.type === 'start_live' ? 'bg-red-50 text-red-600 border-red-100' :
                                   n.type === 'note_download' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                   n.type === 'quiz_rating' ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                  n.type === 'battle_challenge' ? 'bg-orange-50 text-orange-600 border-orange-100' :
                                   'bg-indigo-50 text-indigo-600 border-indigo-100'
                                 }`}>
                                   {n.type === 'start_live' ? <Radio size={20}/> :
                                    n.type === 'note_download' ? <BookOpen size={20}/> :
                                    n.type === 'quiz_rating' ? <Star size={20}/> :
+                                   n.type === 'battle_challenge' ? <Swords size={20}/> :
                                    <Users size={20}/>}
                                 </div>
                                 <div className="flex-grow">

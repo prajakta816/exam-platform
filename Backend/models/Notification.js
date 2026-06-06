@@ -12,7 +12,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ["follow", "quiz_attempt", "note_download"],
+    enum: ["follow", "quiz_attempt", "note_download", "battle_challenge"],
     required: true,
   },
   message: {

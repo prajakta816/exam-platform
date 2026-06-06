@@ -4,6 +4,7 @@ import User from "../models/User.js";
 import Notification from "../models/Notification.js";
 import { logActivity } from "../utils/ActivityLog.js";
 import fs from "fs";
+import { addXP } from "../utils/gamification.js"; // 🎮
 
 // 🚀 Get all notes (Filtered by privacy/following) with pagination
 export const getNotes = TryCatch(async (req, res) => {
@@ -61,6 +62,9 @@ export const uploadNote = TryCatch(async (req, res) => {
     message: `uploaded new notes: "${note.title}"`,
     metadata: { noteId: note._id }
   });
+
+  // 🎮 Award XP: Upload Notes
+  addXP(req.user.id, 30).catch(() => {});
 
   res.status(201).json({ message: "Note uploaded", note });
 });

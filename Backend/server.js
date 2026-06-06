@@ -18,11 +18,18 @@ import commentRoutes from "./routes/commentRoutes.js";
 import ratingRoutes from "./routes/ratingRoutes.js";
 import roomRoutes from "./routes/roomRoutes.js";
 import resultRoutes from "./routes/resultRoutes.js";
+import gamificationRoutes from "./routes/gamificationRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import battleRoutes from "./routes/battleRoutes.js";
 import { PORT, FRONTEND_URL } from "./config/env.js";
 import session from "express-session";
 import passport from "passport";
 import "./config/passport.js";
+import authMiddleware from "./middleware/authMiddleware.js";
+
+// Socket setup
 import { setupSocket } from "./socket/socketHandler.js";
+import { setupBattleSocket } from "./socket/battleSocketHandler.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -86,6 +93,9 @@ app.use("/api/comments", commentRoutes);
 app.use("/api/rating", ratingRoutes);
 app.use("/api/room", roomRoutes);
 app.use("/api/results", resultRoutes);
+app.use("/api/gamification", gamificationRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/battle", battleRoutes);
 
 // Static files (Images)
 app.use("/uploads", express.static("uploads"));
@@ -100,9 +110,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Setup Socket.io
+// Initialize Socket.io
 setupSocket(io);
+setupBattleSocket(io);
 
+// Database Connection
 // 🚀 ONE-TIME DATA MIGRATION: Mark old battle quizzes
 import Quiz from "./models/Quiz.js";
 const migrateData = async () => {
@@ -126,19 +138,23 @@ const migrateData = async () => {
 };
 
 const startServer = (port) => {
+  // Remove previous listeners to prevent duplicate bindings on retry
+  httpServer.removeAllListeners('error');
+
   httpServer.once('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       const newPort = parseInt(port, 10) + 1;
       console.warn(`Port ${port} in use, trying port ${newPort}`);
-      startServer(newPort);
+      httpServer.close(() => startServer(newPort));
     } else {
       console.error('Server error:', err);
+      process.exit(1);
     }
   });
 
   httpServer.listen(port, () => {
-    console.log(`Server running on ${port}`);
-    migrateData(); // Run migration after server starts
+    console.log(`✅ Server running on port ${port}`);
+    migrateData();
   });
 };
 

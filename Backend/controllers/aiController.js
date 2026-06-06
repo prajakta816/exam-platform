@@ -4,11 +4,11 @@ import fs from "fs";
 import Quiz from "../models/Quiz.js";
 import TryCatch from "../utils/TryCatch.js";
 import { extractTextFromPDF } from "../utils/pdfParser.js";
-import { 
-  generateMCQ, 
-  generateFlashcards, 
-  generateStudyPlan, 
-  analyzeWeaknesses, 
+import {
+  generateMCQ,
+  generateFlashcards,
+  generateStudyPlan,
+  analyzeWeaknesses,
   chatWithTutor,
   generateExplanation,
   chatWithOpenAI
@@ -16,6 +16,7 @@ import {
 import Attempt from "../models/Attempt.js";
 import Note from "../models/Note.js";
 import ChatHistory from "../models/ChatHistory.js";
+import { addXP } from "../utils/gamification.js"; // 🎮
 
 // 🆕 Generate from PDF
 export const generateQuizFromPDF = TryCatch(async (req, res) => {
@@ -39,6 +40,8 @@ export const generateQuizFromPDF = TryCatch(async (req, res) => {
     });
 
     res.status(201).json(quiz);
+    // 🎮 Award XP: Publish AI Quiz
+    addXP(req.user.id, 25).catch(() => {});
 
   } catch (error) {
     console.error("PDF Generation Error:", error.message);
@@ -73,6 +76,8 @@ export const generateQuizFromText = TryCatch(async (req, res) => {
     });
 
     res.status(201).json(quiz);
+    // 🎮 Award XP: Publish AI Quiz
+    addXP(req.user.id, 25).catch(() => {});
   } catch (error) {
     console.error("Text Generation Error:", error.message);
     res.status(500).json({ message: error.message || "AI Generation failed. Check server logs." });
@@ -110,7 +115,19 @@ export const chatTutor = TryCatch(async (req, res) => {
   const note = await Note.findById(noteId);
   if (!note) return res.status(404).json({ message: "Note not found" });
 
-  const text = await extractTextFromPDF(note.fileUrl);
+  let text = "";
+  try {
+    const isPdf = note.fileUrl.toLowerCase().endsWith(".pdf");
+    if (isPdf) {
+      text = await extractTextFromPDF(note.fileUrl);
+    } else {
+      text = fs.readFileSync(note.fileUrl, "utf-8");
+    }
+  } catch (err) {
+    console.error("Text extraction failed in chatTutor:", err);
+    return res.json({ response: "I'm having trouble reading your notes file. It might have been deleted or corrupted. Please try re-uploading the note." });
+  }
+
   const response = await chatWithTutor({ context: text, message, history });
   res.json({ response });
 });
@@ -162,7 +179,13 @@ export const aiChat = TryCatch(async (req, res) => {
     }
   } catch (err) {
     console.error("Text extraction failed:", err);
-    return res.status(500).json({ message: "Failed to extract text from note file." });
+    return res.status(201).json({
+      message,
+      response: "I'm having trouble reading your notes file. It might have been deleted or corrupted.",
+      noteId,
+      noteTitle: note.title,
+      createdAt: new Date()
+    });
   }
 
   // Fetch past chat history for context

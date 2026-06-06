@@ -17,7 +17,8 @@ import {
   Radio,
   Zap,
   Clock,
-  Layout
+  Layout,
+  Swords
 } from "lucide-react";
 
 const Profile = () => {
@@ -28,6 +29,7 @@ const Profile = () => {
   const [isFollowing, setIsFollowing] = useState(false);
   const [hasRequested, setHasRequested] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [challengeSent, setChallengeSent] = useState(false);
   const currentUser = getLocalUser();
 
   useEffect(() => {
@@ -87,6 +89,17 @@ const Profile = () => {
     } catch (error) {
       console.error("Error deleting note", error);
       alert("Failed to delete note");
+    }
+  };
+
+  const handleChallenge = async () => {
+    try {
+      await API.post("/battle/challenge", { opponentId: userId });
+      setChallengeSent(true);
+      alert("Challenge sent!");
+    } catch (error) {
+      console.error("Error challenging user", error);
+      alert(error.response?.data?.message || "Failed to send challenge");
     }
   };
 
@@ -165,6 +178,7 @@ const Profile = () => {
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">{user.name}</h1>
               <div className="flex gap-2 justify-center md:justify-start">
                 {currentUser?.id !== userId ? (
+                  <>
                   <button
                     onClick={handleFollowToggle}
                     disabled={hasRequested && !isFollowing}
@@ -179,6 +193,22 @@ const Profile = () => {
                     {!isFollowing && !hasRequested && <UserPlus size={16} />}
                     {isFollowing ? "Unfollow" : hasRequested ? "Pending" : "Follow"}
                   </button>
+                  
+                  {user.role === "student" && currentUser?.role === "student" && (
+                    <button
+                      onClick={handleChallenge}
+                      disabled={challengeSent}
+                      className={`px-8 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+                        challengeSent 
+                          ? "bg-slate-100 text-slate-500 cursor-default"
+                          : "bg-gradient-to-r from-rose-500 to-orange-500 text-white hover:shadow-lg hover:shadow-rose-200 active:scale-95"
+                      }`}
+                    >
+                      <Swords size={16} />
+                      {challengeSent ? "Challenged" : "Battle"}
+                    </button>
+                  )}
+                </>
                 ) : (
                   <button
                     onClick={() => navigate("/profile/edit")}

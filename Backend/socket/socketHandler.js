@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import TestResult from "../models/TestResult.js";
 import Attempt from "../models/Attempt.js";
 import { generateFeedback } from "../utils/aiService.js";
+import { addXP } from "../utils/gamification.js"; // 🎮
 
 // In-memory store for active room timers and participants
 const roomTimers = new Map();
@@ -289,6 +290,11 @@ const endTestFlow = async (io, roomCode) => {
     }));
 
     await TestResult.insertMany(resultsToSave);
+
+    // 🎮 Award XP: Live Quiz Participation (+15 per student)
+    for (const res of resultsToSave) {
+      if (res.studentId) addXP(res.studentId, 15).catch(() => {});
+    }
 
     const leaderboard = resultsToSave.slice(0, 3);
     const allResults = resultsToSave;

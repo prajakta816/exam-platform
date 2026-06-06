@@ -12,7 +12,7 @@ export default function History() {
 
   const fetchHistory = async () => {
     try {
-      const res = await API.get("/attempt/history");
+      const res = await API.get("/attempt/my-attempts");
       setHistory(res.data);
     } catch (err) {
       console.error(err);

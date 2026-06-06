@@ -25,7 +25,7 @@ export default function Analytics() {
 
   const fetchData = async () => {
     try {
-      const res = await API.get("/attempt/history");
+      const res = await API.get("/attempt/my-attempts");
       setData(res.data);
     } catch(err) {
       console.error(err);

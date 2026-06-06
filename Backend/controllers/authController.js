@@ -4,10 +4,9 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import TryCatch from "../utils/TryCatch.js";
 import sendEmail from "../utils/sendEmail.js";
-//import { verifyToken } from "../utils/verifyToken.js";
-import { protect } from "../middleware/authMiddleware.js"; // ✅ ADD THIS
-
+import { protect } from "../middleware/authMiddleware.js";
 import { JWT_SECRET, FRONTEND_URL } from "../config/env.js";
+import { awardDailyLogin } from "../utils/gamification.js"; // 🎮
 
 
 // REGISTER
@@ -109,6 +108,9 @@ export const loginUser = TryCatch(async (req, res) => {
     JWT_SECRET,
     { expiresIn: "7d" }
   );
+
+  // 🎮 Award Daily Login XP (+5, once per day)
+  awardDailyLogin(user._id).catch(() => {});
 
   res.json({
     message: "Login successful",

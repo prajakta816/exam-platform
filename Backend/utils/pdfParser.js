@@ -1,21 +1,23 @@
-/*import fs from "fs";
-import * as pdfParse from "pdf-parse"; // ✅ FIXED
-
-export const extractTextFromPDF = async (path) => {
-  const buffer = fs.readFileSync(path);
-
-  const data = await pdfParse.default(buffer); // ✅ FIXED
-
-  return data.text;
-};*/
 import fs from "fs";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 
-// ✅ FIX: use dynamic import (works perfectly in Node v22)
-export const extractTextFromPDF = async (path) => {
-  const pdf = await import("pdf-parse");
+/**
+ * Extracts all text from a PDF file using pdfjs-dist.
+ * Works reliably on Node.js v22+ with ESM.
+ */
+export const extractTextFromPDF = async (filePath) => {
+  const buffer = fs.readFileSync(filePath);
+  const uint8 = new Uint8Array(buffer);
 
-  const buffer = fs.readFileSync(path);
-  const data = await pdf.default(buffer);
+  const loadingTask = pdfjsLib.getDocument({ data: uint8 });
+  const pdf = await loadingTask.promise;
 
-  return data.text;
+  let fullText = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    fullText += content.items.map((item) => item.str).join(" ") + "\n";
+  }
+
+  return fullText;
 };

@@ -1,4 +1,4 @@
-// 🔄 SENIOR DEV VERSION
+// SENIOR DEV VERSION
 
 import axios from "axios";
 import { safeParse } from "./safeParse.js";
@@ -135,13 +135,51 @@ const generateFeedbackWithGemini = async (prompt) => {
   throw lastError || new Error("Gemini feedback failed");
 };
 
+const generateChatWithGemini = async (prompt) => {
+  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+  const models = getGeminiModels();
+  let lastError;
+
+  for (const modelName of models) {
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`ChatTutor: trying Gemini model ${modelName}, attempt ${attempt}`);
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+      } catch (error) {
+        lastError = error;
+
+        if (!isTransientAIError(error)) {
+          break;
+        }
+
+        const delay = 800 * attempt;
+        console.warn(`ChatTutor Gemini transient error on ${modelName}: ${error.message}. Retrying in ${delay}ms`);
+        await sleep(delay);
+      }
+    }
+  }
+
+  throw lastError || new Error("Gemini chat failed");
+};
+
+const degradedTutorResponse = ({ context = "", message = "" } = {}) => {
+  if (!hasOpenAIKey() && !GEMINI_API_KEY) {
+    return `[Mock AI Tutor] I read your note content (length: ${context.length} characters) and your question: "${message}". Please set up a valid OpenAI or Gemini API key to get real responses.`;
+  }
+
+  return "I'm sorry, the AI service is temporarily under high demand. Please try again in a moment. Your notes are ready, so you can retry this question shortly.";
+};
+
 export const generateMCQ = async (text, numQuestions = 5, isTopic = false, difficulty = "Medium") => {
   const questionCount = Math.min(Math.max(parseInt(numQuestions, 10) || 5, 1), 25);
   const hasGemini = !!GEMINI_API_KEY;
   const hasOpenAI = hasOpenAIKey();
 
   if (!hasGemini && !hasOpenAI) {
-    console.warn("⚠️ Using High-Fidelity Mock Mode (API Key Missing)");
+    console.warn("Using High-Fidelity Mock Mode (API Key Missing)");
     
     return Array.from({ length: questionCount }).map((_, i) => ({
       question: isTopic ? `Mock Question ${i+1} about ${text}?` : `Regarding the text: "${text.slice(0, 50)}...", which statement is accurate?`,
@@ -150,7 +188,7 @@ export const generateMCQ = async (text, numQuestions = 5, isTopic = false, diffi
     }));
   }
 
-  // 🚀 SENIOR PROMPT: Bulletproof instructions
+  // SENIOR PROMPT: Bulletproof instructions
   const prompt = `
   Context: You are a professional educator creating an exam.
   Task: Generate ${questionCount} high-quality multiple-choice questions (MCQs) based on the ${isTopic ? 'following topic/prompt' : 'provided text'}.
@@ -185,15 +223,15 @@ export const generateMCQ = async (text, numQuestions = 5, isTopic = false, diffi
     let questions;
 
     if (hasGemini) {
-      // 🚀 Use Google Gemini API
-      console.log("🤖 Generating with Google Gemini AI...");
+      // Use Google Gemini API
+      console.log("Generating with Google Gemini AI...");
       const content = await generateWithGemini(prompt);
       const parsed = safeParse(content);
       questions = parsed.questions || (Array.isArray(parsed) ? parsed : []);
 
     } else {
-      // 🚀 Use OpenAI API
-      console.log("🤖 Generating with OpenAI GPT-4o...");
+      // Use OpenAI API
+      console.log("Generating with OpenAI GPT-4o...");
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
@@ -295,7 +333,7 @@ export const generateFeedback = async ({ quizTitle, score, totalQuestions, perce
   }
 };
 
-// 🆕 AI Explanation Generator
+// AI Explanation Generator
 export const generateExplanation = async ({ question, options, correctAnswer, studentAnswer }) => {
   const prompt = `
   As an AI Tutor, explain why the student's answer was wrong and why the correct answer is right.
@@ -313,7 +351,7 @@ export const generateExplanation = async ({ question, options, correctAnswer, st
   }
 };
 
-// 🆕 AI Flashcards Generator
+// AI Flashcards Generator
 export const generateFlashcards = async (text) => {
   const prompt = `
   Extract 10 key concepts from this text and turn them into flashcards.
@@ -328,7 +366,7 @@ export const generateFlashcards = async (text) => {
   }
 };
 
-// 🆕 AI Study Planner
+// AI Study Planner
 export const generateStudyPlan = async ({ topic, examDate, currentLevel = "Beginner" }) => {
   const prompt = `
   Create a detailed study roadmap for the topic "${topic}".
@@ -345,7 +383,7 @@ export const generateStudyPlan = async ({ topic, examDate, currentLevel = "Begin
   }
 };
 
-// 🆕 AI Weakness Analysis
+// AI Weakness Analysis
 export const analyzeWeaknesses = async (history) => {
   const historyText = history.map(h => `Quiz: ${h.quiz?.title}, Score: ${h.percentage}%`).join("\n");
   const prompt = `
@@ -364,36 +402,66 @@ export const analyzeWeaknesses = async (history) => {
   }
 };
 
-// 🆕 AI Chat Tutor
+// AI Chat Tutor with resilient multi-model fallback
 export const chatWithTutor = async ({ context, message, history = [] }) => {
-  const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: GEMINI_MODEL });
+  const fullPrompt = `You are a helpful, encouraging AI Study Tutor.
+Answer the student's question based on the provided study notes.
+If the answer is not in the notes, use your general knowledge but explicitly say it's supplementary.
 
-  const chat = model.startChat({
-    history: history.slice(-6).map(h => ({
-      role: h.role === "user" ? "user" : "model",
-      parts: [{ text: h.text }],
-    })),
-    generationConfig: { maxOutputTokens: 500 },
-  });
+Study Notes:
+---
+${context.slice(0, 8000)}
+---
 
-  const fullPrompt = `
-  Context from study notes:
-  ${context.slice(0, 8000)}
-  
-  Student says: ${message}
-  
-  Instructions:
-  - Use the provided context to answer.
-  - If the answer isn't in the context, use your general knowledge but mention it's supplementary.
-  - Be a helpful, encouraging teacher.
-  `;
+Conversation so far:
+${history.slice(-6).map(h => `${h.role === "user" ? "Student" : "Tutor"}: ${h.text}`).join("\n")}
 
-  const result = await chat.sendMessage(fullPrompt);
-  return result.response.text();
+Student: ${message}
+Tutor:`;
+
+  if (GEMINI_API_KEY) {
+    try {
+      return await generateChatWithGemini(fullPrompt);
+    } catch (geminiError) {
+      console.warn("ChatTutor: all Gemini models exhausted, trying OpenAI fallback...", geminiError.message);
+    }
+  }
+
+  if (hasOpenAIKey()) {
+    try {
+      console.log("ChatTutor: falling back to OpenAI GPT-4o...");
+      const response = await axios.post(
+        "https://api.openai.com/v1/chat/completions",
+        {
+          model: "gpt-4o",
+          messages: [
+            { role: "system", content: `You are a helpful AI Study Tutor. Study notes:\n---\n${context.slice(0, 15000)}\n---` },
+            ...history.slice(-10).map(h => ({
+              role: h.role === "user" ? "user" : "assistant",
+              content: h.text || ""
+            })),
+            { role: "user", content: message }
+          ],
+          temperature: 0.7,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          timeout: 30000
+        }
+      );
+      return response.data.choices[0].message.content;
+    } catch (openAIError) {
+      console.error("ChatTutor OpenAI fallback error:", openAIError.response?.data || openAIError.message);
+    }
+  }
+
+  console.error("ChatTutor: all AI providers unavailable. Returning degraded response.");
+  return degradedTutorResponse({ context, message });
 };
-
-// 🆕 AI Chat Tutor (OpenAI Model)
+// AI Chat Tutor (OpenAI Model)
 export const chatWithOpenAI = async ({ context, message, history = [] }) => {
   const hasOpenAI = hasOpenAIKey();
 
@@ -410,7 +478,6 @@ ${context.slice(0, 15000)}
     { role: "system", content: systemPrompt }
   ];
 
-  // Add history
   history.slice(-10).forEach(h => {
     messages.push({
       role: h.role === "user" ? "user" : "assistant",
@@ -418,17 +485,16 @@ ${context.slice(0, 15000)}
     });
   });
 
-  // Add current message
   messages.push({ role: "user", content: message });
 
   if (hasOpenAI) {
     try {
-      console.log("🤖 Chatting with OpenAI GPT-4o...");
+      console.log("Chatting with OpenAI GPT-4o...");
       const response = await axios.post(
         "https://api.openai.com/v1/chat/completions",
         {
           model: "gpt-4o",
-          messages: messages,
+          messages,
           temperature: 0.7,
         },
         {
@@ -445,21 +511,18 @@ ${context.slice(0, 15000)}
     }
   }
 
-  // Fallback to Gemini if OpenAI is not available or failed
-  console.log("🤖 OpenAI chat fallback/not available. Falling back to Gemini...");
+  console.log("OpenAI chat fallback/not available. Falling back to Gemini...");
   if (GEMINI_API_KEY) {
     try {
-      const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: GEMINI_MODEL || "gemini-2.5-flash" });
-      
-      const fullPrompt = `${systemPrompt}\n\nStudent says: ${message}`;
-      const result = await model.generateContent(fullPrompt);
-      return result.response.text();
+      const conversation = history.slice(-10)
+        .map(h => `${h.role === "user" ? "Student" : "Tutor"}: ${h.text || h.message || h.content || ""}`)
+        .join("\n");
+      const fullPrompt = `${systemPrompt}\n\nConversation so far:\n${conversation}\n\nStudent: ${message}\nTutor:`;
+      return await generateChatWithGemini(fullPrompt);
     } catch (geminiError) {
-      console.error("Gemini fallback chat error:", geminiError);
+      console.error("Gemini fallback chat error:", geminiError.message);
     }
   }
 
-  return `[Mock AI Tutor] I read your note content (length: ${context.length} characters) and your question: "${message}". Please set up a valid OpenAI or Gemini API key to get real responses.`;
+  return degradedTutorResponse({ context, message });
 };
-

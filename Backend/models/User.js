@@ -80,7 +80,31 @@ const userSchema = new mongoose.Schema({
   achievements: [{
     title: String,
     date: { type: Date, default: Date.now },
-    icon: String, // e.g., 'trophy', 'star'
+    icon: String,
+  }],
+
+  // 🎮 Gamification
+  xp: {
+    type: Number,
+    default: 0,
+  },
+  level: {
+    type: String,
+    enum: ["Beginner", "Learner", "Advanced", "Expert"],
+    default: "Beginner",
+  },
+  streak: {
+    type: Number,
+    default: 0,
+  },
+  lastActiveDate: {
+    type: Date,
+    default: null,
+  },
+  badges: [{
+    name: String,
+    earnedAt: { type: Date, default: Date.now },
+    icon: String,
   }],
 
 }, { timestamps: true });

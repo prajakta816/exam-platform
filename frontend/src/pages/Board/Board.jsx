@@ -24,10 +24,29 @@ import {
   Award,
   Calendar,
   CheckCircle2,
-  Clock
+  Clock,
+  Flame,
+  Star
 } from "lucide-react";
 import { QuizCardSkeleton, ListRowSkeleton, StatCardSkeleton } from "../../components/Skeleton";
 import ActivityFeed from "../../components/ActivityFeed";
+
+// 🛡️ Safe label extractor: handles whatever shape the AI returns
+// e.g. {area, tip}, {topic, tip}, plain string, etc.
+const getLabel = (item) => {
+  if (!item) return "";
+  if (typeof item === "string") return item;
+  // Accept any of the known field names AI might use
+  return (
+    item.topic ||
+    item.area ||
+    item.subject ||
+    item.name ||
+    item.title ||
+    Object.values(item).find((v) => typeof v === "string") ||
+    JSON.stringify(item)
+  );
+};
 
 const Board = () => {
   const [myQuizzes, setMyQuizzes] = useState([]);
@@ -38,12 +57,16 @@ const Board = () => {
   const [liveResults, setLiveResults] = useState([]);
   const [attempts, setAttempts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [gamification, setGamification] = useState(null);
+  const [learningPulse, setLearningPulse] = useState(null);
   const navigate = useNavigate();
   const user = getLocalUser();
 
   useEffect(() => {
     fetchData();
     fetchWeakness();
+    API.get("/gamification/me").then(r => setGamification(r.data)).catch(() => {});
+    API.get("/analytics/learning-pulse").then(r => setLearningPulse(r.data)).catch(() => {});
   }, []);
 
   const fetchWeakness = async () => {
@@ -66,7 +89,7 @@ const Board = () => {
       
       if (user?.role === "student") {
         promises.push(API.get(`/results/student/${user?.id}`));
-        promises.push(API.get("/attempt/history"));
+        promises.push(API.get("/attempt/my-attempts"));
       }
 
       const results = await Promise.allSettled(promises);
@@ -218,6 +241,66 @@ const Board = () => {
           )}
         </div>
       </div>
+
+      {/* 🎮 Gamification mini-banner */}
+      {gamification && (
+        <div
+          onClick={() => navigate("/gamification")}
+          className="mb-8 cursor-pointer group bg-gradient-to-r from-violet-600 via-indigo-600 to-blue-600 rounded-[2rem] p-5 text-white shadow-xl shadow-indigo-200/40 flex items-center justify-between gap-4 hover:shadow-2xl hover:shadow-indigo-300/50 transition-all duration-300"
+        >
+          <div className="flex items-center gap-6">
+            {/* XP */}
+            <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-2xl border border-white/20">
+              <Zap size={18} className="text-yellow-300" />
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">XP</p>
+                <p className="text-lg font-black leading-tight">{gamification.xp.toLocaleString()}</p>
+              </div>
+            </div>
+            {/* Streak */}
+            <div className="flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-2xl border border-white/20">
+              <Flame size={18} className="text-orange-300" />
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Streak</p>
+                <p className="text-lg font-black leading-tight">{gamification.streak}d</p>
+              </div>
+            </div>
+            {/* Level */}
+            <div className="hidden md:flex items-center gap-2 bg-white/15 backdrop-blur-sm px-4 py-2 rounded-2xl border border-white/20">
+              <Star size={18} className="text-amber-300" />
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-white/60">Level</p>
+                <p className="text-lg font-black leading-tight">{gamification.level}</p>
+              </div>
+            </div>
+            {/* Badges */}
+            {gamification.badges.length > 0 && (
+              <div className="hidden lg:flex items-center gap-2">
+                {gamification.badges.slice(0, 3).map(b => (
+                  <span key={b.name} className="text-xl" title={b.name}>{b.icon || "🎖️"}</span>
+                ))}
+              </div>
+            )}
+          </div>
+          {/* Progress bar + CTA */}
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:block">
+              <div className="w-32 h-2 bg-white/20 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white/80 rounded-full transition-all duration-1000"
+                  style={{ width: `${gamification.progress}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-white/50 font-bold mt-1 text-right">
+                {gamification.progress}% to {gamification.nextLevel || "Max"}
+              </p>
+            </div>
+            <div className="px-5 py-2.5 bg-white/20 backdrop-blur-sm rounded-2xl font-black text-xs uppercase tracking-widest group-hover:bg-white group-hover:text-indigo-600 transition-all border border-white/20 whitespace-nowrap">
+              View Progress →
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-12 relative group">
         <input 
@@ -450,18 +533,44 @@ const Board = () => {
           <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[3rem] p-10 text-white shadow-2xl shadow-indigo-200 relative overflow-hidden h-full flex flex-col justify-center">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
             <div className="relative z-10 flex flex-col md:flex-row items-center gap-10">
-              <div className="bg-white/20 p-6 rounded-3xl backdrop-blur-xl border border-white/20">
+              <div className="bg-white/20 p-6 rounded-3xl backdrop-blur-xl border border-white/20 shrink-0">
                 <BarChart3 size={48} />
               </div>
               <div className="flex-grow text-center md:text-left">
-                <h4 className="font-black text-3xl mb-2">Learning Pulse</h4>
-                <p className="text-white/80 text-lg font-medium mb-6">"Your performance in Science quizzes has improved by 15%. Consider exploring advanced Physics notes."</p>
-                <button 
-                  onClick={() => navigate("/analytics")}
-                  className="px-10 py-4 bg-white text-indigo-600 rounded-2xl font-black hover:bg-slate-50 transition-all shadow-lg active:scale-95"
-                >
-                  View Detailed Analytics
-                </button>
+                <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                  <h4 className="font-black text-3xl">Learning Pulse</h4>
+                  {learningPulse && (
+                    <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-black uppercase tracking-widest border border-white/20">
+                      Avg Score: {learningPulse.averageScore}%
+                    </span>
+                  )}
+                </div>
+                
+                {learningPulse ? (
+                  <p className="text-white/90 text-lg font-medium mb-6 italic leading-relaxed">
+                    "{learningPulse.recommendationText}"
+                  </p>
+                ) : (
+                  <p className="text-white/80 text-lg font-medium mb-6">
+                    Analyzing your learning progress...
+                  </p>
+                )}
+                
+                {learningPulse && learningPulse.recommendedQuizzes?.length > 0 && (
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-6">
+                    <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Recommended:</span>
+                    {learningPulse.recommendedQuizzes.slice(0, 2).map((q, i) => (
+                      <button 
+                        key={i}
+                        onClick={() => navigate(`/quiz/${q._id}`)}
+                        className="flex items-center gap-2 text-xs font-black bg-white/10 hover:bg-white/20 transition-colors px-3 py-1.5 rounded-xl border border-white/10"
+                      >
+                        <BrainCircuit size={14} />
+                        {q.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -666,7 +775,7 @@ const Board = () => {
                   <div key={i} className="flex gap-6 items-start">
                     <div className="w-8 h-8 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-black text-xs shrink-0">{i+1}</div>
                     <div>
-                      <p className="font-black text-slate-800 text-lg mb-1">{w.topic || w}</p>
+                      <p className="font-black text-slate-800 text-lg mb-1">{getLabel(w)}</p>
                       <p className="text-sm text-slate-500 font-medium leading-relaxed italic">"Try reviewing foundational concepts or attempted related quizzes."</p>
                     </div>
                   </div>
@@ -684,7 +793,7 @@ const Board = () => {
                   <div key={i} className="flex gap-6 items-start">
                     <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-black text-xs shrink-0">✓</div>
                     <div>
-                      <p className="font-black text-slate-800 text-lg mb-1">{s.topic || s}</p>
+                      <p className="font-black text-slate-800 text-lg mb-1">{getLabel(s)}</p>
                       <p className="text-sm text-slate-500 font-medium">You're excelling here. Consider helping others or taking expert-level tests.</p>
                     </div>
                   </div>
@@ -701,7 +810,7 @@ const Board = () => {
               <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center">
                 <Sparkles size={24} className="text-amber-400" />
               </div>
-              <p className="font-medium text-slate-300 max-w-md">Our AI recommends prioritizing <span className="text-white font-black">{weaknessData.weaknesses?.[0]?.topic || weaknessData.weaknesses?.[0]}</span> this week for maximum growth.</p>
+              <p className="font-medium text-slate-300 max-w-md">Our AI recommends prioritizing <span className="text-white font-black">{getLabel(weaknessData.weaknesses?.[0])}</span> this week for maximum growth.</p>
             </div>
             <button 
               onClick={() => navigate("/ai")}
